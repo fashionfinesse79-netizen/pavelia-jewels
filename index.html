@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAVELIA JEWELS | Quiet Luxury, Made to Shine</title>
+    <meta name="description" content="Experience the cinematic opening of PAVELIA JEWELS. Fine 925 sterling silver jewelry crafted for minimal, premium, and royal elegance.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&family=Pinyon+Script&display=swap" rel="stylesheet">
+    <!-- Custom Style (with version query to bypass caches) -->
+    <link rel="stylesheet" href="style.css?v=3.2">
+</head>
+<body>
+
+    <!-- Cinematic Preloader Overlay -->
+    <div id="intro-overlay" class="intro-overlay">
+        <!-- Diamond Sparkle Glimmer -->
+        <div class="sparkle-container">
+            <div class="diamond-sparkle"></div>
+        </div>
+
+        <div class="intro-content">
+            <!-- Brand Logo (Cinematic Reveal) -->
+            <div class="intro-logo-wrapper">
+                <h1 class="intro-brand-name">PAVELIA</h1>
+                <p class="intro-brand-sub">JEWELS</p>
+            </div>
+            
+            <!-- Elegant Loading Line -->
+            <div class="loader-line-container">
+                <div class="loader-line"></div>
+            </div>
+
+            <!-- Loading status text -->
+            <div class="loader-status">EST. 2026</div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app-container" class="app-container hidden">
+        
+        <!-- Luxurious Fullscreen Navigation Overlay -->
+        <div id="nav-overlay" class="nav-overlay-menu">
+            <button class="nav-menu-close" id="nav-menu-close-btn" aria-label="Close menu">&times;</button>
+            <div class="nav-menu-content">
+                <nav class="nav-menu-links">
+                    <a href="#jewellery" class="nav-menu-item" data-target="jewellery">
+                        <span class="nav-num">01</span>
+                        <span class="nav-text">JEWELLERY</span>
+                    </a>
+                    <a href="#new-arrivals" class="nav-menu-item" data-target="new-arrivals">
+                        <span class="nav-num">02</span>
+                        <span class="nav-text">NEW ARRIVALS</span>
+                    </a>
+                    <a href="#showroom" class="nav-menu-item" data-target="showroom">
+                        <span class="nav-num">03</span>
+                        <span class="nav-text">THE SHOWROOM</span>
+                    </a>
+                    <a href="#about-us" class="nav-menu-item" data-target="about-us">
+                        <span class="nav-num">04</span>
+                        <span class="nav-text">ABOUT US</span>
+                    </a>
+                </nav>
+                <div class="nav-menu-footer">
+                    <p class="nav-menu-brand">PAVELIA JEWELS</p>
+                    <p class="nav-menu-tagline">Quiet Luxury, Made to Shine</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header / Navigation (Polished for Luxury Boutique Aesthetics) -->
+        <header class="main-header">
+            <div class="header-left">
+                <button class="nav-toggle" aria-label="Toggle menu">
+                    <svg class="icon-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <line x1="4" y1="7" x2="20" y2="7"></line>
+                        <line x1="4" y1="17" x2="15" y2="17"></line>
+                    </svg>
+                </button>
+                <a href="#search" class="header-icon-link" id="search-btn">
+                    <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="header-logo">
+                <a href="#" class="brand-logo-link" aria-label="PAVELIA JEWELS Home">
+                    <div class="header-logo-badge">
+                        <img src="assets/images/logo_silver.png?v=2.5" alt="PAVELIA Fine Jewelry Logo" class="header-logo-img-file">
+                    </div>
+                </a>
+            </div>
+            
+            <div class="header-right">
+                <a href="#account" class="header-icon-link" id="account-btn">
+                    <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+                <a href="#wishlist" class="header-icon-link">
+                    <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </a>
+                <a href="#cart" class="header-icon-link cart-link">
+                    <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Premium Hero Section (Customized Layout matching Reference) -->
+        <main class="hero-section" id="hero-interactive">
+            <!-- Background Ken Burns Zoom Image -->
+            <div class="hero-bg-wrapper" id="parallax-bg">
+                <img src="assets/images/luxury_jewelry_hero.jpg?v=3.2" alt="PAVELIA Fine Jewelry Necklace and Earrings" class="hero-bg-img">
+                <div class="hero-overlay-shimmer"></div>
+            </div>
+
+            <!-- Content Area (Parallax Layer wrapper) -->
+            <div class="hero-content" id="parallax-content">
+                
+
+
+                <!-- 2. Centered Brand Signature with Flower Emblem -->
+                <div class="hero-brand-center">
+                    <div class="emblem-wrapper">
+                        <svg class="flower-emblem" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M60,110 C58,80 50,55 35,35" />
+                            <path d="M48,70 C42,65 30,68 32,78 C34,88 45,82 48,70 Z" />
+                            <path d="M54,50 C60,45 72,48 70,58 C68,68 57,62 54,50 Z" />
+                            <path d="M35,35 C30,28 22,30 25,38 C28,46 38,42 35,35 Z" />
+                            <path d="M35,35 C42,28 50,30 47,38 C44,46 34,42 35,35 Z" />
+                            <circle cx="35" cy="35" r="1.5" fill="currentColor" />
+                        </svg>
+                    </div>
+
+                    <h2 class="hero-brand-title">PAVELIA</h2>
+                    <p class="hero-brand-subtitle">JEWELS</p>
+                </div>
+
+                <!-- 3. Centered CTA Button Block -->
+                <div class="hero-cta-center">
+                    <a href="#showroom" class="btn-primary-block">
+                        <span class="btn-text">EXPLORE COLLECTION</span>
+                        <span class="btn-arrow-right">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- 4. Right Scroll Indicator -->
+                <div class="hero-scroll-right">
+                    <span class="scroll-text">SCROLL</span>
+                    <svg class="sparkle-star" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2z"></path>
+                    </svg>
+                </div>
+            </div>
+        </main>
+
+        <!-- Shop by Category Section -->
+        <section class="category-section" id="jewellery">
+            <div class="category-title-wrapper">
+                <h3 class="category-section-title">SHOP BY CATEGORY</h3>
+                <div class="category-divider">
+                    <span class="divider-line"></span>
+                    <span class="divider-dot">&#10022;</span>
+                    <span class="divider-line"></span>
+                </div>
+            </div>
+
+            <div class="category-grid">
+                <!-- Rings -->
+                <a href="#rings" class="category-card">
+                    <div class="category-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600&auto=format&fit=crop" alt="Rings category" class="category-img">
+                    </div>
+                    <span class="category-name">RINGS</span>
+                    <span class="category-link">SHOP NOW &rarr;</span>
+                </a>
+
+                <!-- Earrings -->
+                <a href="#earrings" class="category-card">
+                    <div class="category-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=600&auto=format&fit=crop" alt="Earrings category" class="category-img">
+                    </div>
+                    <span class="category-name">EARRINGS</span>
+                    <span class="category-link">SHOP NOW &rarr;</span>
+                </a>
+
+                <!-- Necklaces -->
+                <a href="#necklaces" class="category-card">
+                    <div class="category-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600&auto=format&fit=crop" alt="Necklaces category" class="category-img">
+                    </div>
+                    <span class="category-name">NECKLACES</span>
+                    <span class="category-link">SHOP NOW &rarr;</span>
+                </a>
+
+                <!-- Bracelets -->
+                <a href="#bracelets" class="category-card">
+                    <div class="category-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=600&auto=format&fit=crop" alt="Bracelets category" class="category-img">
+                    </div>
+                    <span class="category-name">BRACELETS</span>
+                    <span class="category-link">SHOP NOW &rarr;</span>
+                </a>
+
+                <!-- Gifts -->
+                <a href="#gifts" class="category-card">
+                    <div class="category-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=600&auto=format&fit=crop" alt="Gifts category" class="category-img">
+                    </div>
+                    <span class="category-name">GIFTS</span>
+                    <span class="category-link">SHOP NOW &rarr;</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Premium OTT-Style Banner Carousel Section -->
+        <section class="carousel-section" id="new-arrivals">
+            <div class="carousel-title-wrapper">
+                <p class="carousel-pre-title">EXCLUSIVE COLLECTION</p>
+                <h3 class="carousel-main-title">New Arrivals</h3>
+            </div>
+            
+            <div class="carousel-container" id="campaign-carousel">
+                <div class="carousel-track">
+                    <!-- Slide 1 -->
+                    <div class="carousel-slide active">
+                        <div class="slide-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1633934542430-0905ccb5f050?q=80&w=1325&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="The Solitaire Affair Collection" class="slide-img">
+                            <div class="slide-overlay"></div>
+                        </div>
+                        <div class="slide-content">
+                            <p class="slide-tag">NEW RELEASE</p>
+                            <h4 class="slide-title">The Solitaire Affair</h4>
+                            <p class="slide-desc">Fine cut diamonds set in 925 sterling silver bands, crafted to mirror the morning stars.</p>
+                            <div class="slide-cta-wrapper">
+                                <a href="#solitaire" class="btn-secondary">
+                                    <span class="btn-text">DISCOVER THE CUT</span>
+                                    <span class="btn-arrow"></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Slide 2 -->
+                    <div class="carousel-slide">
+                        <div class="slide-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1673131158656-84601f4d00ea?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="The Royal Choker Collection" class="slide-img">
+                            <div class="slide-overlay"></div>
+                        </div>
+                        <div class="slide-content">
+                            <p class="slide-tag">LIMITED CAMPAIGN</p>
+                            <h4 class="slide-title">Royal Chokers</h4>
+                            <p class="slide-desc">Intricately linked chains designed for heavy collar layouts, expressing bold modern heritage.</p>
+                            <div class="slide-cta-wrapper">
+                                <a href="#chokers" class="btn-secondary">
+                                    <span class="btn-text">EXPLORE LINKS</span>
+                                    <span class="btn-arrow"></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Outline Buttons -->
+                <button class="carousel-nav-btn prev-btn" aria-label="Previous slide">
+                    <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button class="carousel-nav-btn next-btn" aria-label="Next slide">
+                    <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+
+                <!-- Progress Dot Indicators -->
+                <div class="carousel-indicators">
+                    <button class="indicator-dot active" aria-label="Slide 1">
+                        <span class="indicator-progress"></span>
+                    </button>
+                    <button class="indicator-dot" aria-label="Slide 2">
+                        <span class="indicator-progress"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        </section>
+
+        <!-- Premium Product Showroom Section -->
+        <section class="showroom-section" id="showroom">
+            <div class="showroom-title-wrapper">
+                <p class="showroom-pre-title">THE SHOWROOM</p>
+                <div class="category-divider">
+                    <span class="divider-line"></span>
+                    <span class="divider-dot">&#10022;</span>
+                    <span class="divider-line"></span>
+                </div>
+            </div>
+
+            <div class="showroom-container">
+                <!-- RINGS -->
+                <div class="showroom-row">
+                    <h4 class="showroom-row-title">Rings</h4>
+                    <div class="product-grid scroll-row">
+                        <div class="product-card" data-product-id="ring-1">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop" alt="Amour Solitaire Ring" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Amour Solitaire Ring</h5>
+                                <span class="product-price">₹85,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="ring-2">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop" alt="Eternal Diamond Band" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Eternal Diamond Band</h5>
+                                <span class="product-price">₹1,10,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="ring-3">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop" alt="Lumina Gold Dome Ring" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Lumina Gold Dome Ring</h5>
+                                <span class="product-price">₹48,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="ring-4">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop" alt="Seraphina Emerald Ring" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Seraphina Emerald Ring</h5>
+                                <span class="product-price">₹1,35,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="ring-5">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1543294001-f7cbfe92237e?q=80&w=400&auto=format&fit=crop" alt="Dune Minimalist Band" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Dune Minimalist Band</h5>
+                                <span class="product-price">₹32,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EARRINGS -->
+                <div class="showroom-row">
+                    <h4 class="showroom-row-title">Earrings</h4>
+                    <div class="product-grid scroll-row">
+                        <div class="product-card" data-product-id="earring-1">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=400&auto=format&fit=crop" alt="Orion Diamond Studs" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Orion Diamond Studs</h5>
+                                <span class="product-price">₹62,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="earring-2">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=400&auto=format&fit=crop" alt="Gilded Blossom Drops" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Gilded Blossom Drops</h5>
+                                <span class="product-price">₹92,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="earring-3">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1617038220319-276d3bc7d685?q=80&w=400&auto=format&fit=crop" alt="Nova Pearl Hoops" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Nova Pearl Hoops</h5>
+                                <span class="product-price">₹75,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="earring-4">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1629224316810-9d8805b95e76?q=80&w=400&auto=format&fit=crop" alt="Siren Sapphire Drops" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Siren Sapphire Drops</h5>
+                                <span class="product-price">₹1,45,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="earring-5">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1588444839799-eb082e6666fc?q=80&w=400&auto=format&fit=crop" alt="Echo Leaf Climbers" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Echo Leaf Climbers</h5>
+                                <span class="product-price">₹54,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NECKLACES -->
+                <div class="showroom-row">
+                    <h4 class="showroom-row-title">Necklaces</h4>
+                    <div class="product-grid scroll-row">
+                        <div class="product-card" data-product-id="necklace-1">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop" alt="Aura Solitaire Pendant" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Aura Solitaire Pendant</h5>
+                                <span class="product-price">₹95,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="necklace-2">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop" alt="Helix Golden Chain" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Helix Golden Chain</h5>
+                                <span class="product-price">₹58,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="necklace-3">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1611085583191-a3b1a30a8a3a?q=80&w=400&auto=format&fit=crop" alt="Celestial Star Necklace" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Celestial Star Necklace</h5>
+                                <span class="product-price">₹88,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="necklace-4">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=400&auto=format&fit=crop" alt="Marina Aquamarine Choker" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Marina Aquamarine Choker</h5>
+                                <span class="product-price">₹1,65,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="necklace-5">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=400&auto=format&fit=crop" alt="Verdant Malachite Pendant" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Verdant Malachite Pendant</h5>
+                                <span class="product-price">₹72,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BRACELETS -->
+                <div class="showroom-row">
+                    <h4 class="showroom-row-title">Bracelets</h4>
+                    <div class="product-grid scroll-row">
+                        <div class="product-card" data-product-id="bracelet-1">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=400&auto=format&fit=crop" alt="Infinity Link Bracelet" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Infinity Link Bracelet</h5>
+                                <span class="product-price">₹78,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="bracelet-2">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=400&auto=format&fit=crop" alt="Esme Diamond Bangle" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Esme Diamond Bangle</h5>
+                                <span class="product-price">₹1,85,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="bracelet-3">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=400&auto=format&fit=crop" alt="Solstice Gold Cuff" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Solstice Gold Cuff</h5>
+                                <span class="product-price">₹98,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="bracelet-4">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop" alt="Riviera Tennis Bracelet" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Riviera Tennis Bracelet</h5>
+                                <span class="product-price">₹2,40,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-card" data-product-id="bracelet-5">
+                            <div class="product-img-wrapper">
+                                <img src="https://images.unsplash.com/photo-1629224316810-9d8805b95e76?q=80&w=400&auto=format&fit=crop" alt="Luna Chain Bracelet" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">Luna Chain Bracelet</h5>
+                                <span class="product-price">₹45,000</span>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart">Add to Cart</button>
+                                    <button class="btn-buy-now">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Luxury Footer Section -->
+        <footer class="luxury-footer" id="about-us">
+            <!-- Tier 1: Value Propositions -->
+            <div class="footer-props-grid">
+                <!-- Shipping -->
+                <div class="prop-item">
+                    <div class="prop-icon-wrapper">
+                        <svg class="prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="15" height="13" rx="2" ry="2"></rect>
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                        </svg>
+                    </div>
+                    <h5 class="prop-title">WHITE-GLOVE SHIPPING</h5>
+                    <p class="prop-desc">Complimentary express shipping across India on orders over ₹5,000.</p>
+                </div>
+                <!-- Returns -->
+                <div class="prop-item">
+                    <div class="prop-icon-wrapper">
+                        <svg class="prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </div>
+                    <h5 class="prop-title">SEAMLESS RETURNS</h5>
+                    <p class="prop-desc">14-day hassle-free return window with white-glove doorstep pick-up.</p>
+                </div>
+                <!-- Craftsmanship -->
+                <div class="prop-item">
+                    <div class="prop-icon-wrapper">
+                        <svg class="prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <path d="M12 8v8M8 12h8"></path>
+                        </svg>
+                    </div>
+                    <h5 class="prop-title">BESPOKE CRAFTSMANSHIP</h5>
+                    <p class="prop-desc">Each piece hand-finished in our luxury atelier by master artisans.</p>
+                </div>
+                <!-- Encryption -->
+                <div class="prop-item">
+                    <div class="prop-icon-wrapper">
+                        <svg class="prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h5 class="prop-title">RAZORPAY ENCRYPTION</h5>
+                    <p class="prop-desc">PCI-DSS Level 1 256-bit encrypted checkout via Razorpay.</p>
+                </div>
+            </div>
+
+            <!-- Tier 2: Main Footer -->
+            <div class="footer-main-grid">
+                <!-- Brand and Newsletter -->
+                <div class="footer-brand-col">
+                    <div class="footer-logo-plaque">
+                        <svg class="plaque-svg" viewBox="0 0 320 120" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Outer Plaque Shape with notched corners and top crest -->
+                            <path d="M 25 25 
+                                     L 110 25 
+                                     Q 125 12, 160 12 
+                                     Q 195 12, 210 25 
+                                     L 295 25 
+                                     A 10 10 0 0 1 305 35 
+                                     L 305 45 
+                                     Q 295 50, 305 55 
+                                     L 305 95 
+                                     A 10 10 0 0 1 295 105 
+                                     L 25 105 
+                                     A 10 10 0 0 1 15 95 
+                                     L 15 55 
+                                     Q 25 50, 15 45 
+                                     L 15 35 
+                                     A 10 10 0 0 1 25 25 Z" 
+                                  fill="#FFFFFF" stroke="rgba(184, 156, 114, 0.45)" stroke-width="1.2" />
+                            
+                            <!-- Inner border detailing -->
+                            <path d="M 28 28 
+                                     L 112 28 
+                                     Q 125 16, 160 16 
+                                     Q 195 16, 208 28 
+                                     L 292 28 
+                                     A 7 7 0 0 1 299 35 
+                                     L 299 43 
+                                     Q 291 48, 299 53 
+                                     L 299 92 
+                                     A 7 7 0 0 1 292 99 
+                                     L 28 99 
+                                     A 7 7 0 0 1 21 92 
+                                     L 21 53 
+                                     Q 29 48, 21 43 
+                                     L 21 35 
+                                     A 7 7 0 0 1 28 28 Z" 
+                                  fill="none" stroke="rgba(184, 156, 114, 0.25)" stroke-width="0.8" />
+                        </svg>
+                        <div class="plaque-content">
+                            <h4 class="footer-brand-title">PAVELIA JEWELS</h4>
+                            <p class="footer-brand-tagline">THE ART OF FINE JEWELRY</p>
+                        </div>
+                    </div>
+                    
+                    <p class="footer-brand-desc italic-serif">
+                        Created for the woman who adorns herself with confidence, styles with intention, and finds beauty in every timeless detail.
+                    </p>
+                    
+                    <div class="footer-newsletter-wrapper">
+                        <!-- Left decorative leaf branch -->
+                        <svg class="newsletter-leaf left-leaf" viewBox="0 0 50 100" fill="none" stroke="rgba(184, 156, 114, 0.45)" stroke-width="1" stroke-linecap="round">
+                            <path d="M 40 90 C 35 60, 20 40, 10 20" />
+                            <path d="M 35 75 C 28 72, 22 75, 24 82 C 26 89, 32 85, 35 75 Z" />
+                            <path d="M 28 55 C 20 52, 14 55, 16 62 C 18 69, 24 65, 28 55 Z" />
+                            <path d="M 20 35 C 12 32, 6 35, 8 42 C 10 49, 16 45, 20 35 Z" />
+                            <path d="M 10 20 C 5 15, 0 18, 2 24 C 4 30, 8 26, 10 20 Z" />
+                        </svg>
+
+                        <div class="footer-newsletter-box">
+                            <h6 class="newsletter-title">JOIN THE PAVELIA WORLD</h6>
+                            <p class="newsletter-desc">Be the first to discover private capsule edits and boutique showcases.</p>
+                            <form class="newsletter-form" id="newsletter-subscription">
+                                <input type="email" placeholder="Enter your email address" class="newsletter-input" required>
+                                <button type="submit" class="newsletter-submit" aria-label="Subscribe">
+                                    <span class="arrow">&rarr;</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right decorative leaf branch -->
+                        <svg class="newsletter-leaf right-leaf" viewBox="0 0 50 100" fill="none" stroke="rgba(184, 156, 114, 0.45)" stroke-width="1" stroke-linecap="round">
+                            <path d="M 10 90 C 15 60, 30 40, 40 20" />
+                            <path d="M 15 75 C 22 72, 28 75, 26 82 C 24 89, 18 85, 15 75 Z" />
+                            <path d="M 22 55 C 30 52, 36 55, 34 62 C 32 69, 26 65, 22 55 Z" />
+                            <path d="M 30 35 C 38 32, 44 35, 42 42 C 40 49, 34 45, 30 35 Z" />
+                            <path d="M 40 20 C 45 15, 50 18, 48 24 C 46 30, 42 26, 40 20 Z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Boutique Links -->
+                <div class="footer-links-col">
+                    <h6 class="footer-col-title">BOUTIQUE</h6>
+                    <ul class="footer-links-list">
+                        <li>
+                            <a href="#new-arrivals" class="link-with-icon">
+                                <span>New In</span>
+                                <svg class="inline-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                    <rect x="3" y="8" width="18" height="13" rx="2"></rect>
+                                    <path d="M12 8V22M3 8h18M12 8c0-2 2-3 4-3a3 3 0 0 1 0 6c-2 0-4-1-4-3zm0 0c0-2-2-3-4-3a3 3 0 0 0 0 6c2 0 4-1 4-3z"></path>
+                                </svg>
+                            </a>
+                        </li>
+                        <li><a href="#rings">Fine Rings</a></li>
+                        <li><a href="#earrings">Earrings</a></li>
+                        <li><a href="#necklaces">Necklaces</a></li>
+                        <li><a href="#bracelets">Bracelets</a></li>
+                    </ul>
+                </div>
+
+                <!-- Client Care -->
+                <div class="footer-links-col">
+                    <h6 class="footer-col-title">CLIENT CARE</h6>
+                    <ul class="footer-links-list">
+                        <li>
+                            <a href="#track" class="link-with-icon">
+                                <span>Order Tracking</span>
+                                <svg class="inline-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                    <circle cx="8" cy="16" r="4"></circle>
+                                    <path d="M11 13l8-8 3 3-2 2-2-2-2 2-2-2-3 3"></path>
+                                </svg>
+                            </a>
+                        </li>
+                        <li><a href="#size">Size & Fit Guide</a></li>
+                        <li>
+                            <a href="#bespoke" class="link-with-icon">
+                                <span>Bespoke Inquiry</span>
+                                <svg class="inline-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5zM16 8L8 16M5 19l-2 2"></path>
+                                </svg>
+                            </a>
+                        </li>
+                        <li><a href="#assistance">Atelier Assistance</a></li>
+                    </ul>
+                </div>
+
+                <!-- The House -->
+                <div class="footer-links-col">
+                    <h6 class="footer-col-title">THE HOUSE</h6>
+                    <ul class="footer-links-list">
+                        <li><a href="#story">Our Story & Heritage</a></li>
+                        <li><a href="#location" class="atelier-link">Atelier Location</a></li>
+                    </ul>
+                    
+                    <!-- Atelier Concierge block filling empty space -->
+                    <div class="footer-concierge-block">
+                        <h6 class="concierge-title">ATELIER CONCIERGE</h6>
+                        <p class="concierge-desc">By private appointment only.</p>
+                        <p class="concierge-info">
+                            <span class="info-label">Email:</span> pujitpvtltd@gmail.com<br>
+                            <span class="info-label">Phone:</span> +91 91315 70759<br>
+                            <span class="info-label">Hours:</span> Mon – Sat: 10 AM – 7 PM
+                        </p>
+                    </div>
+
+                    <div class="footer-social-wrapper">
+                        <a href="https://www.instagram.com/pavelia.jewels?igsi=MTNxOGpid3JtMXlqdw==" class="social-icon-link" aria-label="Instagram" target="_blank">
+                            <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Copyright Tier -->
+            <div class="footer-copyright-bar">
+                <p>&copy; 2026 HOUSE OF PAVELIA. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Luxurious Cart Side Drawer -->
+        <div id="cart-drawer" class="cart-drawer">
+            <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+            <div class="cart-drawer-content">
+                <div class="cart-drawer-header">
+                    <h4 class="cart-drawer-title">YOUR ATELIER BAG</h4>
+                    <button class="cart-drawer-close" id="cart-drawer-close-btn" aria-label="Close cart">&times;</button>
+                </div>
+                <div class="cart-drawer-body" id="cart-drawer-body">
+                    <!-- Dynamic Cart Items Injected by JS -->
+                    <div class="cart-empty-message">
+                        <p>Your bag is currently empty.</p>
+                        <a href="#showroom" class="btn-shop-now" id="btn-shop-now-drawer">EXPLORE COLLECTIONS</a>
+                    </div>
+                </div>
+                <div class="cart-drawer-footer">
+                    <div class="cart-subtotal-row">
+                        <span>Subtotal</span>
+                        <span class="cart-subtotal-price" id="cart-subtotal-display">₹0</span>
+                    </div>
+                    <p class="cart-shipping-notice">Complimentary white-glove shipping included.</p>
+                    <button class="btn-checkout-drawer" id="btn-checkout-drawer">PROCEED TO CHECKOUT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Quick View Modal -->
+        <div id="quickview-modal" class="quickview-modal">
+            <div class="quickview-overlay" id="quickview-overlay"></div>
+            <div class="quickview-container">
+                <button class="quickview-close" id="quickview-close-btn" aria-label="Close details">&times;</button>
+                <div class="quickview-content" id="quickview-content">
+                    <!-- Dynamic Content Injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Luxurious Account Authentication Modal -->
+        <div id="auth-modal" class="auth-modal">
+            <div class="auth-overlay" id="auth-overlay"></div>
+            <div class="auth-container">
+                <button class="auth-close" id="auth-close-btn" aria-label="Close portal">&times;</button>
+                
+                <!-- Tab 1: SIGN IN -->
+                <div class="auth-panel" id="signin-panel">
+                    <h4 class="auth-title">ATELIER SIGN IN</h4>
+                    <p class="auth-subtitle">Access your private collections and secure boutique details.</p>
+                    <form id="signin-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="signin-email" class="form-label">Email Address</label>
+                            <input type="email" id="signin-email" class="form-input" placeholder="name@domain.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signin-password" class="form-label">Password</label>
+                            <input type="password" id="signin-password" class="form-input" required>
+                        </div>
+                        <div class="auth-error-message" id="signin-error"></div>
+                        <button type="submit" class="btn-auth-submit">SIGN IN TO PAVELIA</button>
+                    </form>
+                    <p class="auth-switch-text">New to Pavelia? <a href="#" id="switch-to-signup">Create an Account</a></p>
+                </div>
+                
+                <!-- Tab 2: CREATE ACCOUNT -->
+                <div class="auth-panel hidden" id="signup-panel">
+                    <h4 class="auth-title">CREATE ATELIER ACCOUNT</h4>
+                    <p class="auth-subtitle">Join the Pavelia world for private cuts, express shipping, and boutique benefits.</p>
+                    <form id="signup-form" class="auth-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signup-firstname" class="form-label">First Name</label>
+                                <input type="text" id="signup-firstname" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-lastname" class="form-label">Last Name</label>
+                                <input type="text" id="signup-lastname" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email" class="form-label">Email Address</label>
+                            <input type="email" id="signup-email" class="form-input" placeholder="name@domain.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password" class="form-label">Create Password</label>
+                            <input type="password" id="signup-password" class="form-input" minlength="6" required>
+                        </div>
+                        <div class="auth-error-message" id="signup-error"></div>
+                        <button type="submit" class="btn-auth-submit">CREATE ACCOUNT</button>
+                    </form>
+                    <p class="auth-switch-text">Already have an account? <a href="#" id="switch-to-signin">Sign In</a></p>
+                </div>
+
+                <!-- Tab 3: CUSTOMER DASHBOARD (Logged In Profile) -->
+                <div class="auth-panel hidden" id="dashboard-panel">
+                    <h4 class="auth-title">YOUR PAVELIA PROFILE</h4>
+                    <p class="auth-subtitle" id="dashboard-welcome">Welcome back, Client.</p>
+                    
+                    <div class="dashboard-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Email Address</span>
+                            <span class="detail-value" id="dashboard-email-display">client@pavelia.com</span>
+                        </div>
+                        <div class="detail-row border-top">
+                            <span class="detail-label">Membership Status</span>
+                            <span class="detail-value gold-label">&#10022; ATELIER ELITE</span>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-orders">
+                        <h5 class="orders-title">PAST BESPOKE ORDERS</h5>
+                        <div class="orders-list" id="dashboard-orders-list">
+                            <div class="order-empty">No orders placed yet. Your bespoke histories will appear here.</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-logout" id="btn-logout">SECURE LOGOUT</button>
+                </div>
+            </div>
+        </div>
+
+    <!-- JS Logic (with version query to bypass caches) -->
+    <script src="app.js?v=3.2"></script>
+</body>
+</html>
