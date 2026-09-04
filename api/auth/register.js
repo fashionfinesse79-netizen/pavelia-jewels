@@ -1,5 +1,8 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { connectToDatabase, getFallbackStore, saveFallbackStore } = require('../db');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'pavelia_luxury_jwt_key_est_2026';
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -66,8 +69,21 @@ module.exports = async (req, res) => {
             saveFallbackStore(store);
         }
 
+        // Generate instant token
+        const token = jwt.sign(
+            {
+                userId: newUser.id,
+                email: newUser.email,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName
+            },
+            JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
         return res.status(201).json({
             message: 'Account created successfully. Welcome to Pavelia Jewels!',
+            token,
             user: {
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
