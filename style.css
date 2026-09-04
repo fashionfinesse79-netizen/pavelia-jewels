@@ -783,59 +783,6 @@ img {
     animation: pulseSlow 2.5s infinite ease-in-out;
 }
 
-/* -------------------------------------------------------------
- * 7. RED CARPET PRESS ACCREDITATION STRIP
- * ------------------------------------------------------------- */
-.press-strip-section {
-    background: #0E0E0E;
-    padding: 24px 4%;
-    border-bottom: 1px solid rgba(197, 168, 128, 0.15);
-    border-top: 1px solid rgba(197, 168, 128, 0.15);
-}
-
-.press-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 28px;
-}
-
-.press-label {
-    font-size: 0.64rem;
-    font-weight: 600;
-    letter-spacing: 0.3em;
-    color: var(--color-gold);
-    text-transform: uppercase;
-}
-
-.press-logos {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-}
-
-.press-logo {
-    font-family: var(--font-serif-royal);
-    font-size: 1.1rem;
-    letter-spacing: 0.25em;
-    color: rgba(255, 255, 255, 0.5);
-    transition: color var(--transition-fast);
-}
-
-.press-logo:hover {
-    color: var(--color-gold-light);
-}
-
-.press-bullet {
-    color: var(--color-gold);
-    font-size: 0.6rem;
-    opacity: 0.5;
-}
 
 /* -------------------------------------------------------------
  * 8. COMMON SECTION HEADERS & DIVIDERS

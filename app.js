@@ -614,17 +614,6 @@ function initializePaveliaCommerce() {
         document.getElementById('footer-btn-size-guide')
     ];
 
-    // Appointment Elements
-    const appointmentModal = document.getElementById('appointment-modal');
-    const appointmentOverlay = document.getElementById('appointment-overlay');
-    const appointmentCloseBtn = document.getElementById('appointment-close-btn');
-    const appointmentForm = document.getElementById('appointment-form');
-    const openApptBtns = [
-        document.getElementById('btn-open-appointment-nav'),
-        document.getElementById('btn-hero-appointment'),
-        document.getElementById('btn-book-bespoke-cta'),
-        document.getElementById('footer-btn-appointment')
-    ];
 
     // -------------------------------------------------------------
     // RENDER SHOWROOM PRODUCT GRID
@@ -1249,37 +1238,6 @@ function initializePaveliaCommerce() {
         });
     });
 
-    // Appointment Modal
-    function openAppointmentModal() {
-        if (appointmentModal) {
-            appointmentModal.classList.add('active');
-            document.body.classList.add('lock-scroll');
-        }
-    }
-
-    function closeAppointmentModal() {
-        if (appointmentModal) {
-            appointmentModal.classList.remove('active');
-            document.body.classList.remove('lock-scroll');
-        }
-    }
-
-    openApptBtns.forEach(btn => {
-        if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); openAppointmentModal(); });
-    });
-    if (appointmentCloseBtn) appointmentCloseBtn.addEventListener('click', closeAppointmentModal);
-    if (appointmentOverlay) appointmentOverlay.addEventListener('click', closeAppointmentModal);
-
-    if (appointmentForm) {
-        appointmentForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('appt-name')?.value || 'Connoisseur';
-            showToast(`✦ Private Atelier Viewing request confirmed for ${name}. Our Senior Gemologist will contact you shortly.`);
-            appointmentForm.reset();
-            closeAppointmentModal();
-        });
-    }
-
     // Global ESC key modal dismissal
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1288,7 +1246,6 @@ function initializePaveliaCommerce() {
             closeSearchModal();
             closeQuickview();
             closeSizeGuideModal();
-            closeAppointmentModal();
         }
     });
 
