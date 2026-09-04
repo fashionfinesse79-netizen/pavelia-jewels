@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { connectToDatabase } = require('../db');
+const { connectToDatabase, getFallbackStore, saveFallbackStore } = require('../db');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -16,42 +16,67 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email, password, firstName, lastName } = req.body;
+        const { email, password, firstName, lastName } = req.body || {};
 
         if (!email || !password || !firstName) {
-            return res.status(400).json({ error: 'Missing email, password, or first name.' });
+            return res.status(400).json({ error: 'Please provide your first name, email, and password.' });
         }
 
-        const db = await connectToDatabase();
-        const usersCollection = db.collection('users');
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+        }
 
-        // Check if user already exists
         const normalizedEmail = email.toLowerCase().trim();
-        const existingUser = await usersCollection.findOne({ email: normalizedEmail });
-
-        if (existingUser) {
-            return res.status(400).json({ error: 'An account with this email already exists.' });
-        }
-
-        // Hash the password securely
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        // Insert new user
         const newUser = {
+            id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
             email: normalizedEmail,
             passwordHash,
             firstName: firstName.trim(),
             lastName: (lastName || '').trim(),
-            createdAt: new Date()
+            createdAt: new Date().toISOString()
         };
 
-        await usersCollection.insertOne(newUser);
+        const db = await connectToDatabase();
+        if (db) {
+            try {
+                const usersCollection = db.collection('users');
+                const existingUser = await usersCollection.findOne({ email: normalizedEmail });
+                if (existingUser) {
+                    return res.status(400).json({ error: 'An account with this email already exists.' });
+                }
+                await usersCollection.insertOne(newUser);
+            } catch (dbErr) {
+                console.warn('DB insert error, falling back to local vault:', dbErr.message);
+                const store = getFallbackStore();
+                if (store.users.some(u => u.email === normalizedEmail)) {
+                    return res.status(400).json({ error: 'An account with this email already exists.' });
+                }
+                store.users.push(newUser);
+                saveFallbackStore(store);
+            }
+        } else {
+            const store = getFallbackStore();
+            if (store.users.some(u => u.email === normalizedEmail)) {
+                return res.status(400).json({ error: 'An account with this email already exists.' });
+            }
+            store.users.push(newUser);
+            saveFallbackStore(store);
+        }
 
-        return res.status(201).json({ message: 'Account created successfully. You can now log in.' });
+        return res.status(201).json({
+            message: 'Account created successfully. Welcome to Pavelia Jewels!',
+            user: {
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email
+            }
+        });
 
     } catch (error) {
         console.error('Registration error:', error);
-        return res.status(500).json({ error: 'Internal server error occurred during registration.' });
+        return res.status(500).json({ error: 'Registration failed. Please try again.' });
     }
 };

@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { connectToDatabase } = require('../db');
+const { connectToDatabase, getFallbackStore } = require('../db');
 
-// JWT Secret Key - falls back to a default locally, but should be set in Vercel settings
+// JWT Secret Key
 const JWT_SECRET = process.env.JWT_SECRET || 'pavelia_luxury_jwt_key_est_2026';
 
 module.exports = async (req, res) => {
@@ -20,48 +20,66 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
         if (!email || !password) {
-            return res.status(400).json({ error: 'Please enter both email and password.' });
+            return res.status(400).json({ error: 'Please enter both your email and password.' });
         }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        let user = null;
 
         const db = await connectToDatabase();
-        const usersCollection = db.collection('users');
-
-        // Locate user in MongoDB
-        const normalizedEmail = email.toLowerCase().trim();
-        const user = await usersCollection.findOne({ email: normalizedEmail });
+        if (db) {
+            try {
+                const usersCollection = db.collection('users');
+                user = await usersCollection.findOne({ email: normalizedEmail });
+            } catch (dbErr) {
+                console.warn('DB find error, checking fallback store:', dbErr.message);
+            }
+        }
 
         if (!user) {
-            return res.status(400).json({ error: 'Invalid email or password.' });
+            const store = getFallbackStore();
+            user = store.users.find(u => u.email === normalizedEmail);
         }
 
-        // Compare password hash
+        if (!user) {
+            return res.status(400).json({ error: 'No account found with this email address.' });
+        }
+
+        // Compare password securely
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid email or password.' });
+            return res.status(400).json({ error: 'Incorrect password. Please verify your credentials.' });
         }
 
-        // Create secure JSON Web Token
+        const userId = user._id ? user._id.toString() : (user.id || user.email);
+
+        // Sign token with user info for instant profile retrieval
         const token = jwt.sign(
-            { userId: user._id.toString(), email: user.email },
+            {
+                userId,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName || ''
+            },
             JWT_SECRET,
-            { expiresIn: '7d' } // Token valid for 7 days
+            { expiresIn: '30d' }
         );
 
         return res.status(200).json({
-            message: 'Login successful.',
+            message: 'Signed in successfully.',
             token,
             user: {
                 firstName: user.firstName,
-                lastName: user.lastName,
+                lastName: user.lastName || '',
                 email: user.email
             }
         });
 
     } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ error: 'Internal server error occurred during login.' });
+        return res.status(500).json({ error: 'Authentication failed. Please try again.' });
     }
 };
