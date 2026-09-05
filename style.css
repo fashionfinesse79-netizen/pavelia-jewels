@@ -972,12 +972,14 @@ img {
 }
 
 /* -------------------------------------------------------------
- * 10. OTT-STYLE CAMPAIGN CAROUSEL
+ * 10. OTT-STYLE CAMPAIGN CAROUSEL (FULL-BLEED EDGE-TO-EDGE)
  * ------------------------------------------------------------- */
 .carousel-section {
-    padding: 60px 4%;
-    background-color: #0E0E0E;
+    padding: 70px 0 0 0;
+    background-color: #0A0A0A;
     color: #FFFFFF;
+    width: 100%;
+    overflow: hidden;
 }
 
 .carousel-section .carousel-main-title {
@@ -986,23 +988,29 @@ img {
 
 .carousel-container {
     position: relative;
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     overflow: hidden;
-    border-radius: 6px;
-    border: 1px solid rgba(197, 168, 128, 0.25);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 0;
+    border-top: 1px solid rgba(197, 168, 128, 0.25);
+    border-bottom: 1px solid rgba(197, 168, 128, 0.25);
+    border-left: none;
+    border-right: none;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
 }
 
 .carousel-track {
     display: flex;
     transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
 }
 
 .carousel-slide {
     min-width: 100%;
+    width: 100%;
     position: relative;
-    height: 480px;
+    height: clamp(540px, 70vh, 700px);
     display: flex;
     align-items: center;
 }
@@ -1019,12 +1027,13 @@ img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: brightness(0.72);
+    object-position: center;
+    filter: brightness(0.78);
     transition: transform 12s ease-in-out;
 }
 
 .carousel-slide.active .slide-img {
-    transform: scale(1.06);
+    transform: scale(1.05);
 }
 
 .slide-overlay {
@@ -1033,14 +1042,14 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, rgba(9, 9, 9, 0.85) 0%, rgba(9, 9, 9, 0.3) 60%, rgba(9, 9, 9, 0.8) 100%);
+    background: linear-gradient(90deg, rgba(8, 8, 8, 0.9) 0%, rgba(8, 8, 8, 0.45) 45%, rgba(8, 8, 8, 0.15) 70%, rgba(8, 8, 8, 0.55) 100%);
 }
 
 .slide-content {
     position: relative;
     z-index: 5;
     padding: 0 8%;
-    max-width: 600px;
+    max-width: 700px;
 }
 
 .slide-tag {
@@ -1048,25 +1057,26 @@ img {
     font-weight: 600;
     letter-spacing: 0.3em;
     color: var(--color-gold);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .slide-title {
     font-family: var(--font-serif-royal);
-    font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
     font-weight: 400;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.14em;
     color: #FFFFFF;
-    line-height: 1.1;
-    margin-bottom: 16px;
+    line-height: 1.12;
+    margin-bottom: 18px;
 }
 
 .slide-desc {
     font-family: var(--font-serif);
-    font-size: 1.05rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 24px;
+    font-size: 1.12rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.88);
+    margin-bottom: 28px;
+    max-width: 580px;
 }
 
 .btn-secondary {
@@ -1079,7 +1089,7 @@ img {
     font-weight: 600;
     letter-spacing: 0.22em;
     text-indent: 0.22em;
-    padding: 14px 32px;
+    padding: 15px 36px;
     border-radius: 2px;
     transition: all var(--transition-fast);
 }
@@ -1093,10 +1103,10 @@ img {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    background: rgba(18, 18, 18, 0.7);
-    backdrop-filter: blur(10px);
+    width: 50px;
+    height: 50px;
+    background: rgba(18, 18, 18, 0.75);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--color-gold-border);
     color: var(--color-gold);
     border-radius: 50%;
@@ -1104,34 +1114,39 @@ img {
     align-items: center;
     justify-content: center;
     z-index: 10;
+    cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .carousel-nav-btn:hover {
     background: var(--color-gold);
     color: #0A0A0A;
+    transform: translateY(-50%) scale(1.06);
 }
 
-.prev-btn { left: 20px; }
-.next-btn { right: 20px; }
+.prev-btn { left: 40px; }
+.next-btn { right: 40px; }
 
 .carousel-indicators {
     position: absolute;
-    bottom: 20px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    gap: 12px;
     z-index: 10;
 }
 
 .indicator-dot {
-    width: 36px;
+    width: 44px;
     height: 3px;
     background: rgba(255, 255, 255, 0.25);
     border-radius: 2px;
     overflow: hidden;
     position: relative;
+    cursor: pointer;
+    border: none;
+    padding: 0;
 }
 
 .indicator-progress {
@@ -1145,6 +1160,42 @@ img {
 
 .indicator-dot.active .indicator-progress {
     width: 100%;
+}
+
+@media (max-width: 768px) {
+    .carousel-section {
+        padding: 50px 0 0 0;
+    }
+
+    .carousel-slide {
+        height: 500px;
+    }
+
+    .slide-content {
+        padding: 0 24px;
+        max-width: 100%;
+    }
+
+    .prev-btn {
+        left: 14px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .next-btn {
+        right: 14px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .slide-title {
+        font-size: clamp(1.8rem, 6.5vw, 2.4rem);
+    }
+
+    .slide-desc {
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+    }
 }
 
 /* -------------------------------------------------------------
