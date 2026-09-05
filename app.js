@@ -709,7 +709,7 @@ function initializePaveliaCommerce() {
 
                         <div class="product-card-actions">
                             <button class="btn-card-add-bag" data-id="${product.id}">ADD TO BAG</button>
-                            <button class="btn-card-quickview" data-id="${product.id}">DETAILS</button>
+                            <button class="btn-card-buynow" data-id="${product.id}">BUY NOW</button>
                         </div>
                     </div>
                 </div>
@@ -720,12 +720,37 @@ function initializePaveliaCommerce() {
     }
 
     function bindProductCardEvents() {
-        // Quick View triggers
-        document.querySelectorAll('.btn-quickview-trigger, .btn-card-quickview, .product-img-wrapper').forEach(btn => {
+        // Quick View triggers (Top right icon & image click)
+        document.querySelectorAll('.btn-quickview-trigger, .product-img-wrapper').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const productId = btn.dataset.id || btn.closest('.product-card').dataset.productId;
                 openQuickview(productId);
+            });
+        });
+
+        // Buy Now triggers on product card
+        document.querySelectorAll('.btn-card-buynow').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productId = btn.dataset.id;
+                const product = getPaveliaCatalog().find(p => p.id === productId);
+                if (product) {
+                    const metals = (product.options && product.options.metal) || ['925 Sterling Silver'];
+                    const sizes = (product.options && product.options.size) || ['Standard'];
+                    if (typeof window.openCheckoutModal === 'function') {
+                        window.openCheckoutModal([{
+                            id: product.id,
+                            name: product.name,
+                            price: product.price,
+                            priceNum: product.priceNum,
+                            image: (product.images && product.images[0]) || product.image,
+                            variantMetal: metals[0] || '925 Sterling Silver',
+                            variantSize: sizes[0] || 'Standard',
+                            quantity: 1
+                        }], true);
+                    }
+                }
             });
         });
 
@@ -931,8 +956,14 @@ function initializePaveliaCommerce() {
 
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', () => {
-            showToast('✦ Connecting to encrypted Razorpay vault gateway for armored checkout...');
+            if (!cart || cart.length === 0) {
+                showToast('Your Atelier bag is currently empty.');
+                return;
+            }
             closeCartDrawer();
+            if (typeof window.openCheckoutModal === 'function') {
+                window.openCheckoutModal(cart, false);
+            }
         });
     }
 
@@ -1201,8 +1232,9 @@ function initializePaveliaCommerce() {
                         ` : ''}
                     </div>
 
-                    <div class="quickview-actions">
-                        <button class="btn-qv-add-cart" id="btn-qv-add-bag">ADD TO ATELIER BAG &rarr;</button>
+                    <div class="quickview-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn-qv-add-cart" id="btn-qv-add-bag" style="flex: 1; min-width: 180px;">ADD TO ATELIER BAG &rarr;</button>
+                        <button class="btn-qv-buynow" id="btn-qv-buynow" style="flex: 1; min-width: 180px; background: linear-gradient(135deg, #DFCA9B, #C5A880); color: #0A0A0A; border: none; font-family: var(--font-heading); font-size: 0.72rem; letter-spacing: 0.14em; font-weight: 700; padding: 14px 20px; border-radius: 2px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(197, 168, 128, 0.3);">BUY NOW &rarr;</button>
                     </div>
                 </div>
             </div>
@@ -1239,6 +1271,28 @@ function initializePaveliaCommerce() {
                     variantSize: activeSize
                 });
                 closeQuickview();
+            });
+        }
+
+        const qvBuyNowBtn = document.getElementById('btn-qv-buynow');
+        if (qvBuyNowBtn) {
+            qvBuyNowBtn.addEventListener('click', () => {
+                const activeMetal = document.querySelector('#qv-metal-options .option-btn.active')?.dataset.value || metals[0];
+                const activeSize = document.querySelector('#qv-size-options .option-btn.active')?.dataset.value || sizes[0] || 'Standard';
+
+                closeQuickview();
+                if (typeof window.openCheckoutModal === 'function') {
+                    window.openCheckoutModal([{
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        priceNum: product.priceNum,
+                        image: primaryImg,
+                        variantMetal: activeMetal,
+                        variantSize: activeSize,
+                        quantity: 1
+                    }], true);
+                }
             });
         }
 
@@ -1317,6 +1371,11 @@ function initializePaveliaCommerce() {
     // Expose helpers globally
     window.renderShowroomProducts = renderShowroomProducts;
     window.openQuickview = openQuickview;
+    window.getPaveliaCart = () => cart;
+    window.clearPaveliaCart = () => {
+        cart = [];
+        updateCartUI();
+    };
 
     // Initial Loadings
     renderShowroomProducts();
@@ -1380,7 +1439,588 @@ function initializeNavigation() {
 }
 
 /* ==========================================================================
-   5. DEDICATED FULL-VIEW MAISON ADMIN DASHBOARD
+   5. LUXURY E-COMMERCE CHECKOUT FLOW & DEMO RAZORPAY GATEWAY
+   ========================================================================== */
+function initializeCheckoutFlow() {
+    // 1. Modal & Backdrop Elements
+    const checkoutModal = document.getElementById('pavelia-checkout-modal');
+    const checkoutModalClose = document.getElementById('checkout-modal-close');
+    const btnCheckoutClose = document.getElementById('btn-checkout-close');
+    const btnCheckoutFinish = document.getElementById('btn-checkout-finish');
+
+    // 2. Steps Trackers & Panels
+    const stepItems = document.querySelectorAll('.checkout-steps-tracker .checkout-step-item');
+    const stepPanels = {
+        1: document.getElementById('checkout-step-1'),
+        2: document.getElementById('checkout-step-2'),
+        3: document.getElementById('checkout-step-3')
+    };
+
+    // 3. Step 1 Form Elements
+    const addressForm = document.getElementById('checkout-address-form');
+    const inputFullName = document.getElementById('checkout-fullname');
+    const inputPhone = document.getElementById('checkout-phone');
+    const inputEmail = document.getElementById('checkout-email');
+    const inputStreet = document.getElementById('checkout-street');
+    const inputLandmark = document.getElementById('checkout-landmark');
+    const inputPincode = document.getElementById('checkout-pincode');
+    const inputCity = document.getElementById('checkout-city');
+    const inputState = document.getElementById('checkout-state');
+    const step1Error = document.getElementById('checkout-step1-error');
+    const itemsListEl = document.getElementById('checkout-items-list');
+    const subtotalValEl = document.getElementById('checkout-subtotal-val');
+    const totalValEl = document.getElementById('checkout-total-val');
+
+    // 4. Step 2 Payment Elements
+    const payOnlineCard = document.getElementById('pay-method-online-card');
+    const payCodCard = document.getElementById('pay-method-cod-card');
+    const paymentMethodRadios = document.querySelectorAll('input[name="payment-method"]');
+    const deliveryAddressRecap = document.getElementById('delivery-address-recap');
+    const itemsRecapEl = document.getElementById('checkout-items-recap');
+    const subtotalRecapEl = document.getElementById('checkout-subtotal-recap');
+    const totalRecapEl = document.getElementById('checkout-total-recap');
+    const btnBackToAddress = document.getElementById('btn-back-to-address');
+    const btnTriggerPayment = document.getElementById('btn-trigger-payment');
+    const btnPayLabel = document.getElementById('btn-pay-label');
+
+    // 5. Step 3 Order Placed Receipt Elements
+    const placedOrderId = document.getElementById('placed-order-id');
+    const placedClientName = document.getElementById('placed-client-name');
+    const placedPaymentStatus = document.getElementById('placed-payment-status');
+    const placedDeliveryDate = document.getElementById('placed-delivery-date');
+    const placedTotalVal = document.getElementById('placed-total-val');
+    const placedItemsSummary = document.getElementById('placed-items-summary');
+    const placedAddressText = document.getElementById('placed-address-text');
+    const btnWhatsappTrack = document.getElementById('btn-whatsapp-track');
+
+    // 6. Demo Razorpay Gateway Popup Elements
+    const rzpModal = document.getElementById('razorpay-demo-modal');
+    const rzpModalClose = document.getElementById('rzp-modal-close');
+    const rzpModalAmount = document.getElementById('rzp-modal-amount');
+    const rzpBodyContent = document.getElementById('rzp-body-content');
+    const rzpProcessingState = document.getElementById('rzp-processing-state');
+    const rzpTabs = document.querySelectorAll('.rzp-tab');
+    const rzpPanels = {
+        upi: document.getElementById('rzp-panel-upi'),
+        card: document.getElementById('rzp-panel-card'),
+        netbanking: document.getElementById('rzp-panel-netbanking')
+    };
+    const rzpUpiApps = document.querySelectorAll('.rzp-upi-app-item');
+    const rzpVpaInput = document.getElementById('rzp-vpa-input');
+    const rzpBankPills = document.querySelectorAll('.rzp-bank-pill');
+    const btnRzpPayConfirm = document.getElementById('btn-rzp-pay-confirm');
+
+    // 7. Internal Flow State
+    let currentCheckoutItems = [];
+    let isInstantSingleBuy = false;
+    let checkoutAddress = null;
+    let selectedPaymentMode = 'online'; // 'online' or 'cod'
+
+    // Helper: Parse numerical price
+    function extractNumericPrice(priceVal) {
+        if (typeof priceVal === 'number') return priceVal;
+        if (!priceVal) return 0;
+        const clean = String(priceVal).replace(/[^\d]/g, '');
+        return parseInt(clean, 10) || 0;
+    }
+
+    // Helper: Calculate checkout totals
+    function calculateTotals(items) {
+        let subtotal = 0;
+        items.forEach(it => {
+            const unitPrice = it.priceNum || extractNumericPrice(it.price);
+            const qty = it.quantity || 1;
+            subtotal += (unitPrice * qty);
+        });
+        return {
+            subtotal,
+            total: subtotal // Transit is insured & complimentary
+        };
+    }
+
+    // Helper: Switch active checkout step panel
+    function setCheckoutStep(stepNumber) {
+        // Toggle step tracker classes
+        stepItems.forEach(item => {
+            const itemStep = parseInt(item.dataset.step, 10);
+            item.classList.remove('active', 'completed');
+            if (itemStep === stepNumber) {
+                item.classList.add('active');
+            } else if (itemStep < stepNumber) {
+                item.classList.add('completed');
+            }
+        });
+
+        // Toggle panels
+        Object.keys(stepPanels).forEach(key => {
+            const panel = stepPanels[key];
+            if (panel) {
+                if (parseInt(key, 10) === stepNumber) {
+                    panel.classList.remove('hidden');
+                } else {
+                    panel.classList.add('hidden');
+                }
+            }
+        });
+
+        // Scroll modal card to top when step transitions
+        const modalContent = document.querySelector('.checkout-modal-card');
+        if (modalContent) modalContent.scrollTop = 0;
+    }
+
+    // Helper: Render items list into summary containers
+    function renderItemsSummary(items, containerEl) {
+        if (!containerEl) return;
+        if (!items || items.length === 0) {
+            containerEl.innerHTML = '<div style="color: #A0A0A0; font-size: 0.8rem; padding: 12px 0;">No items selected.</div>';
+            return;
+        }
+
+        containerEl.innerHTML = items.map(item => {
+            const unitPriceNum = item.priceNum || extractNumericPrice(item.price);
+            const qty = item.quantity || 1;
+            const lineTotal = unitPriceNum * qty;
+            const itemImg = item.image || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=300';
+            const variantSpecs = [item.variantMetal, item.variantSize && item.variantSize !== 'Standard' ? `Size ${item.variantSize}` : ''].filter(Boolean).join(' • ');
+
+            return `
+                <div class="checkout-item-row" style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(197,168,128,0.12);">
+                    <div style="width: 54px; height: 54px; border-radius: 2px; overflow: hidden; background: #0E0E0E; border: 1px solid rgba(197,168,128,0.2); flex-shrink: 0;">
+                        <img src="${itemImg}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-family: var(--font-heading); font-size: 0.82rem; color: #FFFFFF; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                        ${variantSpecs ? `<div style="font-size: 0.68rem; color: #C5A880; margin-top: 2px;">${variantSpecs}</div>` : ''}
+                        <div style="font-size: 0.68rem; color: #8E8E8E; margin-top: 2px;">Qty: ${qty}</div>
+                    </div>
+                    <div style="font-family: var(--font-heading); font-size: 0.85rem; color: #E8D7B8; font-weight: 600; text-align: right; flex-shrink: 0;">
+                        ₹${lineTotal.toLocaleString('en-IN')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Main Open Checkout Function
+    function openCheckoutModal(items, isInstant = false) {
+        if (!items || items.length === 0) {
+            if (typeof window.showPaveliaToast === 'function') {
+                window.showPaveliaToast('Please select a fine creation to begin checkout.');
+            }
+            return;
+        }
+
+        currentCheckoutItems = Array.isArray(items) ? JSON.parse(JSON.stringify(items)) : [items];
+        isInstantSingleBuy = Boolean(isInstant);
+
+        // Calculate and display totals
+        const totals = calculateTotals(currentCheckoutItems);
+        const formattedTotal = `₹${totals.total.toLocaleString('en-IN')}`;
+
+        if (subtotalValEl) subtotalValEl.textContent = formattedTotal;
+        if (totalValEl) totalValEl.textContent = formattedTotal;
+        if (subtotalRecapEl) subtotalRecapEl.textContent = formattedTotal;
+        if (totalRecapEl) totalRecapEl.textContent = formattedTotal;
+
+        // Render item summaries in Step 1 & Step 2
+        renderItemsSummary(currentCheckoutItems, itemsListEl);
+        renderItemsSummary(currentCheckoutItems, itemsRecapEl);
+
+        // Pre-fill user information if available
+        const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+        const savedAddress = JSON.parse(localStorage.getItem('pavelia_saved_address') || 'null');
+
+        if (cachedUser) {
+            if (inputFullName && !inputFullName.value) {
+                inputFullName.value = `${cachedUser.firstName || ''} ${cachedUser.lastName || ''}`.trim();
+            }
+            if (inputEmail && !inputEmail.value) {
+                inputEmail.value = cachedUser.email || '';
+            }
+        }
+
+        if (savedAddress) {
+            if (inputFullName && savedAddress.fullName) inputFullName.value = savedAddress.fullName;
+            if (inputPhone && savedAddress.phone) inputPhone.value = savedAddress.phone;
+            if (inputEmail && savedAddress.email) inputEmail.value = savedAddress.email;
+            if (inputStreet && savedAddress.street) inputStreet.value = savedAddress.street;
+            if (inputLandmark && savedAddress.landmark) inputLandmark.value = savedAddress.landmark;
+            if (inputPincode && savedAddress.pincode) inputPincode.value = savedAddress.pincode;
+            if (inputCity && savedAddress.city) inputCity.value = savedAddress.city;
+            if (inputState && savedAddress.state) inputState.value = savedAddress.state;
+
+            if (savedAddress.addressType) {
+                const typeRadio = document.querySelector(`input[name="address-type"][value="${savedAddress.addressType}"]`);
+                if (typeRadio) typeRadio.checked = true;
+            }
+        }
+
+        if (step1Error) step1Error.textContent = '';
+
+        // Reset to Step 1
+        setCheckoutStep(1);
+
+        // Show Modal
+        if (checkoutModal) {
+            checkoutModal.classList.remove('hidden');
+            checkoutModal.classList.add('active');
+            document.body.classList.add('lock-scroll');
+        }
+    }
+
+    function closeCheckoutModal() {
+        if (checkoutModal) {
+            checkoutModal.classList.remove('active');
+            setTimeout(() => {
+                checkoutModal.classList.add('hidden');
+            }, 300);
+            document.body.classList.remove('lock-scroll');
+        }
+    }
+
+    // -------------------------------------------------------------
+    // STEP 1: ADDRESS FORM VALIDATION & ADVANCEMENT
+    // -------------------------------------------------------------
+    if (addressForm) {
+        addressForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (step1Error) step1Error.textContent = '';
+
+            const fullName = (inputFullName ? inputFullName.value : '').trim();
+            const phone = (inputPhone ? inputPhone.value : '').trim();
+            const email = (inputEmail ? inputEmail.value : '').trim().toLowerCase();
+            const street = (inputStreet ? inputStreet.value : '').trim();
+            const landmark = (inputLandmark ? inputLandmark.value : '').trim();
+            const pincode = (inputPincode ? inputPincode.value : '').trim();
+            const city = (inputCity ? inputCity.value : '').trim();
+            const state = (inputState ? inputState.value : '').trim();
+            const addressType = document.querySelector('input[name="address-type"]:checked')?.value || 'Home';
+
+            // Validation Checks
+            if (!fullName || fullName.length < 2) {
+                if (step1Error) step1Error.textContent = 'Please provide your full legal name for transit insurance.';
+                if (inputFullName) inputFullName.focus();
+                return;
+            }
+
+            const phoneDigits = phone.replace(/[^\d]/g, '');
+            if (!phone || phoneDigits.length < 10) {
+                if (step1Error) step1Error.textContent = 'Please enter a valid 10-digit mobile contact number (+91).';
+                if (inputPhone) inputPhone.focus();
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                if (step1Error) step1Error.textContent = 'Please enter a valid email address for certificate issuance and tracking.';
+                if (inputEmail) inputEmail.focus();
+                return;
+            }
+
+            if (!street || street.length < 5) {
+                if (step1Error) step1Error.textContent = 'Please enter your complete street / residence delivery address.';
+                if (inputStreet) inputStreet.focus();
+                return;
+            }
+
+            const pinClean = pincode.replace(/[^\d]/g, '');
+            if (!pincode || pinClean.length !== 6) {
+                if (step1Error) step1Error.textContent = 'Please enter a valid 6-digit postal PIN code.';
+                if (inputPincode) inputPincode.focus();
+                return;
+            }
+
+            if (!city) {
+                if (step1Error) step1Error.textContent = 'Please enter your city / district.';
+                if (inputCity) inputCity.focus();
+                return;
+            }
+
+            if (!state) {
+                if (step1Error) step1Error.textContent = 'Please select your state or union territory.';
+                if (inputState) inputState.focus();
+                return;
+            }
+
+            // Save Address Object
+            checkoutAddress = {
+                fullName,
+                phone: phoneDigits,
+                email,
+                street,
+                landmark,
+                pincode: pinClean,
+                city,
+                state,
+                addressType
+            };
+
+            localStorage.setItem('pavelia_saved_address', JSON.stringify(checkoutAddress));
+
+            // Populate Step 2 Delivery Recap
+            if (deliveryAddressRecap) {
+                deliveryAddressRecap.innerHTML = `
+                    <div style="background: rgba(197,168,128,0.06); border: 1px solid rgba(197,168,128,0.2); padding: 14px 16px; border-radius: 3px; font-size: 0.76rem; color: #E0D5C1; line-height: 1.6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <strong style="color: var(--color-gold); font-family: var(--font-heading); letter-spacing: 0.08em;">✦ ARMORED TRANSIT DESTINATION:</strong>
+                            <span style="font-size: 0.68rem; background: #1A1A1A; border: 1px solid #C5A880; color: #C5A880; padding: 2px 8px; border-radius: 2px;">${addressType.toUpperCase()}</span>
+                        </div>
+                        <div style="font-weight: 600; color: #FFFFFF; font-size: 0.82rem;">${fullName} • +91 ${phoneDigits}</div>
+                        <div style="color: #BFB4A0; margin-top: 2px;">${street}${landmark ? ', ' + landmark : ''}, ${city}, ${state} - ${pinClean}</div>
+                        <div style="color: #8E8E8E; font-size: 0.7rem; margin-top: 2px;">Notifications &amp; GIA Vault Card to: ${email}</div>
+                    </div>
+                `;
+            }
+
+            // Move to Step 2
+            setCheckoutStep(2);
+        });
+    }
+
+    // -------------------------------------------------------------
+    // STEP 2: PAYMENT METHOD SELECTION & TRIGGER
+    // -------------------------------------------------------------
+    const updatePaymentSelection = (mode) => {
+        selectedPaymentMode = mode;
+        if (mode === 'online') {
+            if (payOnlineCard) payOnlineCard.classList.add('active');
+            if (payCodCard) payCodCard.classList.remove('active');
+            const radioOnline = document.querySelector('input[name="payment-method"][value="online"]');
+            if (radioOnline) radioOnline.checked = true;
+            if (btnPayLabel) btnPayLabel.textContent = 'PAY NOW VIA RAZORPAY';
+        } else {
+            if (payOnlineCard) payOnlineCard.classList.remove('active');
+            if (payCodCard) payCodCard.classList.add('active');
+            const radioCod = document.querySelector('input[name="payment-method"][value="cod"]');
+            if (radioCod) radioCod.checked = true;
+            if (btnPayLabel) btnPayLabel.textContent = 'CONFIRM CASH ON DELIVERY ORDER';
+        }
+    };
+
+    if (payOnlineCard) {
+        payOnlineCard.addEventListener('click', () => updatePaymentSelection('online'));
+    }
+    if (payCodCard) {
+        payCodCard.addEventListener('click', () => updatePaymentSelection('cod'));
+    }
+    paymentMethodRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => updatePaymentSelection(e.target.value));
+    });
+
+    if (btnBackToAddress) {
+        btnBackToAddress.addEventListener('click', () => setCheckoutStep(1));
+    }
+
+    if (btnTriggerPayment) {
+        btnTriggerPayment.addEventListener('click', () => {
+            const totals = calculateTotals(currentCheckoutItems);
+            if (selectedPaymentMode === 'online') {
+                // Open Demo Razorpay Simulation Gateway
+                if (rzpModal) {
+                    if (rzpModalAmount) rzpModalAmount.textContent = `₹${totals.total.toLocaleString('en-IN')}`;
+                    if (rzpBodyContent) rzpBodyContent.classList.remove('hidden');
+                    if (rzpProcessingState) rzpProcessingState.classList.add('hidden');
+                    rzpModal.classList.remove('hidden');
+                    rzpModal.classList.add('active');
+                }
+            } else {
+                // Cash on Delivery
+                finalizeOrder('Cash / Card on Delivery (Armored Transit Verification)');
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // DEMO RAZORPAY GATEWAY SIMULATOR
+    // -------------------------------------------------------------
+    function closeRazorpayModal() {
+        if (rzpModal) {
+            rzpModal.classList.remove('active');
+            setTimeout(() => {
+                rzpModal.classList.add('hidden');
+                if (rzpBodyContent) rzpBodyContent.classList.remove('hidden');
+                if (rzpProcessingState) rzpProcessingState.classList.add('hidden');
+            }, 250);
+        }
+    }
+
+    if (rzpModalClose) rzpModalClose.addEventListener('click', closeRazorpayModal);
+
+    // Razorpay Tabs Switcher
+    rzpTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            rzpTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const targetTab = tab.dataset.rzpTab;
+            Object.keys(rzpPanels).forEach(key => {
+                const panel = rzpPanels[key];
+                if (panel) {
+                    if (key === targetTab) {
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                }
+            });
+        });
+    });
+
+    // Razorpay UPI App selector
+    rzpUpiApps.forEach(app => {
+        app.addEventListener('click', () => {
+            rzpUpiApps.forEach(a => {
+                a.classList.remove('active');
+                const radio = a.querySelector('.upi-radio');
+                if (radio) radio.textContent = '○';
+            });
+            app.classList.add('active');
+            const activeRadio = app.querySelector('.upi-radio');
+            if (activeRadio) activeRadio.textContent = '●';
+
+            const upiType = app.dataset.upi;
+            if (rzpVpaInput) {
+                if (upiType === 'gpay') rzpVpaInput.value = 'client@okhdfcbank';
+                else if (upiType === 'phonepe') rzpVpaInput.value = 'client@ybl';
+                else if (upiType === 'paytm') rzpVpaInput.value = 'client@paytm';
+            }
+        });
+    });
+
+    // Bank Pills
+    rzpBankPills.forEach(bank => {
+        bank.addEventListener('click', () => {
+            rzpBankPills.forEach(b => b.classList.remove('active'));
+            bank.classList.add('active');
+        });
+    });
+
+    // Confirm Razorpay Demo Payment
+    if (btnRzpPayConfirm) {
+        btnRzpPayConfirm.addEventListener('click', () => {
+            if (rzpBodyContent) rzpBodyContent.classList.add('hidden');
+            if (rzpProcessingState) rzpProcessingState.classList.remove('hidden');
+
+            setTimeout(() => {
+                closeRazorpayModal();
+                finalizeOrder('Online Payment (Encrypted Razorpay Vault - UPI/Card)');
+            }, 1400);
+        });
+    }
+
+    // -------------------------------------------------------------
+    // FINALIZE ORDER & STEP 3 SUCCESS RECEIPT
+    // -------------------------------------------------------------
+    function finalizeOrder(paymentMethodText) {
+        const orderYear = new Date().getFullYear();
+        const orderRand = Math.floor(10000 + Math.random() * 90000);
+        const orderId = `PVL-${orderYear}-${orderRand}`;
+        const totals = calculateTotals(currentCheckoutItems);
+        const orderDate = new Date().toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        const newOrderRecord = {
+            orderId,
+            orderDate,
+            timestamp: new Date().toISOString(),
+            items: currentCheckoutItems,
+            total: totals.total,
+            paymentMethod: paymentMethodText,
+            address: checkoutAddress || {},
+            status: 'Confirmed • In Bespoke Atelier Preparation'
+        };
+
+        // Save order to LocalStorage
+        try {
+            const existingOrders = JSON.parse(localStorage.getItem('pavelia_orders') || '[]');
+            existingOrders.unshift(newOrderRecord);
+            localStorage.setItem('pavelia_orders', JSON.stringify(existingOrders));
+        } catch (e) {
+            console.error('Failed to store order in localStorage', e);
+        }
+
+        // Clear cart if this was a full cart drawer checkout
+        if (!isInstantSingleBuy) {
+            if (typeof window.clearPaveliaCart === 'function') {
+                window.clearPaveliaCart();
+            }
+        }
+
+        // Populate Step 3 Order Confirmation Screen
+        if (placedOrderId) placedOrderId.textContent = orderId;
+        if (placedClientName) placedClientName.textContent = (checkoutAddress && checkoutAddress.fullName) || 'Esteemed Patron';
+        if (placedPaymentStatus) placedPaymentStatus.textContent = paymentMethodText;
+        if (placedTotalVal) placedTotalVal.textContent = `₹${totals.total.toLocaleString('en-IN')}`;
+        if (placedDeliveryDate) placedDeliveryDate.textContent = '3 - 5 Business Days (Armored Transit)';
+
+        if (placedAddressText && checkoutAddress) {
+            placedAddressText.textContent = `${checkoutAddress.fullName}, ${checkoutAddress.street}${checkoutAddress.landmark ? ', ' + checkoutAddress.landmark : ''}, ${checkoutAddress.city}, ${checkoutAddress.state} - ${checkoutAddress.pincode} (Ph: +91 ${checkoutAddress.phone})`;
+        }
+
+        if (placedItemsSummary) {
+            renderItemsSummary(currentCheckoutItems, placedItemsSummary);
+        }
+
+        // Generate dynamic WhatsApp Concierge tracking link
+        if (btnWhatsappTrack) {
+            const waMsg = `Hello Pavelia Luxury Atelier Concierge,\n\nI have placed a bespoke Haute Joaillerie commission on your boutique.\n\n✦ Order ID: ${orderId}\n✦ Client: ${(checkoutAddress && checkoutAddress.fullName) || 'Patron'}\n✦ Total Investment: ₹${totals.total.toLocaleString('en-IN')}\n✦ Payment Mode: ${paymentMethodText}\n✦ Delivery Destination: ${(checkoutAddress && checkoutAddress.city) || ''}, ${(checkoutAddress && checkoutAddress.state) || ''}\n\nPlease share live master artisan crafting updates & armored tracking.`;
+            btnWhatsappTrack.href = `https://wa.me/919999999999?text=${encodeURIComponent(waMsg)}`;
+        }
+
+        // Advance to Step 3
+        setCheckoutStep(3);
+
+        if (typeof window.showPaveliaToast === 'function') {
+            window.showPaveliaToast(`✦ Commission ${orderId} confirmed! Our lapidary atelier has received your order.`);
+        }
+
+        // Trigger custom event so customer dashboard updates immediately
+        window.dispatchEvent(new CustomEvent('pavelia_order_placed', { detail: newOrderRecord }));
+    }
+
+    // Modal Close Buttons
+    if (checkoutModalClose) checkoutModalClose.addEventListener('click', closeCheckoutModal);
+    if (btnCheckoutClose) btnCheckoutClose.addEventListener('click', closeCheckoutModal);
+
+    if (btnCheckoutFinish) {
+        btnCheckoutFinish.addEventListener('click', () => {
+            closeCheckoutModal();
+            const showroom = document.getElementById('showroom');
+            if (showroom) showroom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
+    // Dismiss modals on backdrop click
+    if (checkoutModal) {
+        checkoutModal.addEventListener('click', (e) => {
+            if (e.target === checkoutModal) closeCheckoutModal();
+        });
+    }
+    if (rzpModal) {
+        rzpModal.addEventListener('click', (e) => {
+            if (e.target === rzpModal) closeRazorpayModal();
+        });
+    }
+
+    // Global ESC key dismissal
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (rzpModal && rzpModal.classList.contains('active')) {
+                closeRazorpayModal();
+            } else if (checkoutModal && checkoutModal.classList.contains('active')) {
+                closeCheckoutModal();
+            }
+        }
+    });
+
+    // Expose openCheckoutModal globally
+    window.openCheckoutModal = openCheckoutModal;
+}
+
+/* ==========================================================================
+   6. DEDICATED FULL-VIEW MAISON ADMIN DASHBOARD
    ========================================================================== */
 function initializeAdminDashboard() {
     const adminDashboard = document.getElementById('admin-fullview-dashboard');
@@ -1984,9 +2624,29 @@ function initializeAuth() {
         }
 
         if (dashboardOrdersList) {
+            const placedOrders = JSON.parse(localStorage.getItem('pavelia_orders') || '[]');
             const cartItems = JSON.parse(localStorage.getItem('pavelia_cart') || '[]');
             const wishlistItems = JSON.parse(localStorage.getItem('pavelia_wishlist') || '[]');
-            if (cartItems.length > 0 || wishlistItems.length > 0) {
+
+            if (placedOrders.length > 0) {
+                dashboardOrdersList.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                        ${placedOrders.map(order => `
+                            <div style="background: #191919; border: 1px solid rgba(197,168,128,0.25); border-radius: 3px; padding: 12px 14px; font-size: 0.74rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <strong style="color: var(--color-gold); font-family: var(--font-heading); font-size: 0.78rem;">${order.orderId}</strong>
+                                    <span style="font-size: 0.65rem; background: rgba(197,168,128,0.12); color: #DFCA9B; padding: 2px 6px; border-radius: 2px; border: 1px solid rgba(197,168,128,0.3);">● ${order.status || 'IN PRODUCTION'}</span>
+                                </div>
+                                <div style="color: #E0D5C1; font-size: 0.72rem;">${order.items && order.items.length ? order.items.map(it => `${it.name} (x${it.quantity || 1})`).join(', ') : 'Fine Joaillerie Commission'}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; color: #8E8E8E; font-size: 0.68rem;">
+                                    <span>${order.orderDate || 'Recent'} • ${order.paymentMethod ? order.paymentMethod.split('(')[0] : 'Paid'}</span>
+                                    <strong style="color: #FFFFFF; font-size: 0.76rem;">₹${(order.total || 0).toLocaleString('en-IN')}</strong>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (cartItems.length > 0 || wishlistItems.length > 0) {
                 dashboardOrdersList.innerHTML = `
                     <div style="font-size:0.75rem; color:#E0D5C1; line-height:1.6; background:#1E1E1E; padding:12px 14px; border-radius:3px; border:1px solid rgba(197,168,128,0.2);">
                         <p style="margin-bottom:4px;"><strong style="color:var(--color-gold);">&#10022; Private Vault Status:</strong></p>
@@ -1999,6 +2659,8 @@ function initializeAuth() {
             }
         }
     };
+
+    window.addEventListener('pavelia_order_placed', updateDashboardDetails);
 
     const updateHeaderAuthState = (user) => {
         let welcomeBadge = document.getElementById('header-welcome-badge');
@@ -2370,6 +3032,7 @@ function initApp() {
     runClassicPreloader();
     initializePaveliaCommerce();
     initializeNavigation();
+    initializeCheckoutFlow();
     initializeAdminDashboard();
     initializeAuth();
 }

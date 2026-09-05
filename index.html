@@ -1145,6 +1145,413 @@
         </div>
     </div>
 
+    <!-- =============================================================
+         LUXURY E-COMMERCE CHECKOUT MODAL FLOW
+         Step 1: Delivery Address -> Step 2: Payment -> Step 3: Order Placed
+         ============================================================= -->
+    <div id="pavelia-checkout-modal" class="checkout-modal-backdrop hidden">
+        <div class="checkout-modal-card">
+            <!-- Modal Header -->
+            <div class="checkout-modal-header">
+                <div class="checkout-header-title-box">
+                    <span class="checkout-kicker">✦ HAUTE ATELIER VAULT TRANSIT</span>
+                    <h3 class="checkout-title" id="checkout-main-title">SECURE CHECKOUT</h3>
+                </div>
+                <button type="button" class="checkout-modal-close" id="checkout-modal-close" aria-label="Close Checkout">&times;</button>
+            </div>
+
+            <!-- Steps Progress Track -->
+            <div class="checkout-steps-tracker" id="checkout-steps-tracker">
+                <div class="checkout-step-item active" data-step="1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">DELIVERY ADDRESS</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="checkout-step-item" data-step="2">
+                    <span class="step-num">2</span>
+                    <span class="step-label">SECURE PAYMENT</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="checkout-step-item" data-step="3">
+                    <span class="step-num">3</span>
+                    <span class="step-label">ORDER PLACED</span>
+                </div>
+            </div>
+
+            <!-- STEP 1: ADDRESS & CONTACT DETAILS + ORDER SUMMARY -->
+            <div class="checkout-step-panel" id="checkout-step-1">
+                <div class="checkout-split-layout">
+                    <!-- Left Column: Address Form -->
+                    <div class="checkout-form-column">
+                        <h4 class="checkout-section-heading">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>Client &amp; Armored Transit Details</span>
+                        </h4>
+
+                        <form id="checkout-address-form" novalidate>
+                            <div class="form-row-grid">
+                                <div class="form-group">
+                                    <label for="checkout-fullname" class="checkout-label">Recipient Full Name *</label>
+                                    <input type="text" id="checkout-fullname" class="checkout-input" placeholder="e.g. Ananya Sharma" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="checkout-phone" class="checkout-label">Contact Phone (+91) *</label>
+                                    <input type="tel" id="checkout-phone" class="checkout-input" placeholder="e.g. 9876543210" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="checkout-email" class="checkout-label">Email Address (For Certificate &amp; Tracking) *</label>
+                                <input type="email" id="checkout-email" class="checkout-input" placeholder="client@example.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="checkout-street" class="checkout-label">Flat / House No. / Building / Street Address *</label>
+                                <input type="text" id="checkout-street" class="checkout-input" placeholder="e.g. Penthouse 4B, Emerald Towers, MG Road" required>
+                            </div>
+
+                            <div class="form-row-grid">
+                                <div class="form-group">
+                                    <label for="checkout-landmark" class="checkout-label">Landmark / Locality (Optional)</label>
+                                    <input type="text" id="checkout-landmark" class="checkout-input" placeholder="e.g. Near Royal Opera House">
+                                </div>
+                                <div class="form-group">
+                                    <label for="checkout-pincode" class="checkout-label">PIN Code *</label>
+                                    <input type="text" id="checkout-pincode" class="checkout-input" placeholder="e.g. 400001" maxlength="6" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid">
+                                <div class="form-group">
+                                    <label for="checkout-city" class="checkout-label">City *</label>
+                                    <input type="text" id="checkout-city" class="checkout-input" placeholder="e.g. Mumbai" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="checkout-state" class="checkout-label">State / Region *</label>
+                                    <select id="checkout-state" class="checkout-input" required>
+                                        <option value="">Select State</option>
+                                        <option value="Maharashtra" selected>Maharashtra</option>
+                                        <option value="Delhi">Delhi / NCR</option>
+                                        <option value="Karnataka">Karnataka</option>
+                                        <option value="Gujarat">Gujarat</option>
+                                        <option value="Tamil Nadu">Tamil Nadu</option>
+                                        <option value="Telangana">Telangana</option>
+                                        <option value="West Bengal">West Bengal</option>
+                                        <option value="Rajasthan">Rajasthan</option>
+                                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                        <option value="Punjab">Punjab</option>
+                                        <option value="Haryana">Haryana</option>
+                                        <option value="Kerala">Kerala</option>
+                                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                        <option value="Goa">Goa</option>
+                                        <option value="Other">Other State / UT</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Address Type Selection -->
+                            <div class="checkout-address-type-row">
+                                <span class="checkout-label">Delivery Location Type:</span>
+                                <div class="address-type-pills">
+                                    <label class="type-pill-label">
+                                        <input type="radio" name="address-type" value="Home" checked>
+                                        <span>✦ Residence (Home)</span>
+                                    </label>
+                                    <label class="type-pill-label">
+                                        <input type="radio" name="address-type" value="Office">
+                                        <span>✦ Private Office</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="checkout-error-msg" id="checkout-step1-error"></div>
+
+                            <div class="checkout-step-actions">
+                                <button type="button" class="btn-checkout-cancel" id="btn-checkout-close">RETURN TO STORE</button>
+                                <button type="submit" class="btn-checkout-next" id="btn-proceed-to-payment">
+                                    <span>CONTINUE TO PAYMENT</span>
+                                    <span class="btn-arrow">&rarr;</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Order Summary Sidebar -->
+                    <div class="checkout-summary-column">
+                        <div class="checkout-summary-card">
+                            <h5 class="summary-card-title">CREATION SUMMARY</h5>
+                            <div class="checkout-items-list" id="checkout-items-list">
+                                <!-- Injected dynamically via JS -->
+                            </div>
+
+                            <!-- Packaging Option -->
+                            <div class="checkout-packaging-row">
+                                <label class="gift-checkbox-label">
+                                    <input type="checkbox" id="checkout-gift-box" checked>
+                                    <span class="custom-checkbox"></span>
+                                    <span class="gift-text">Complimentary Velvet Vault Box &amp; Scented Seal</span>
+                                </label>
+                            </div>
+
+                            <!-- Cost Breakdown -->
+                            <div class="checkout-breakdown-list">
+                                <div class="breakdown-row">
+                                    <span>Creations Subtotal</span>
+                                    <span id="checkout-subtotal-val">₹0</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span>Armored Vault Transit (Insured)</span>
+                                    <span class="free-badge">FREE</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span>Certificate of Authenticity</span>
+                                    <span class="free-badge">COMPLIMENTARY</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span>GST &amp; Atelier Customs</span>
+                                    <span class="included-badge">INCLUDED</span>
+                                </div>
+                                <div class="breakdown-row total-row">
+                                    <span class="total-label">Total Investment</span>
+                                    <span class="total-val" id="checkout-total-val">₹0</span>
+                                </div>
+                            </div>
+
+                            <div class="checkout-security-badges">
+                                <div class="sec-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <span>256-Bit Encrypted Checkout</span>
+                                </div>
+                                <div class="sec-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <span>100% Insured Armored Transit</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: SECURE PAYMENT SELECTION (DEMO RAZORPAY / COD) -->
+            <div class="checkout-step-panel hidden" id="checkout-step-2">
+                <div class="checkout-split-layout">
+                    <!-- Left Column: Payment Options -->
+                    <div class="checkout-form-column">
+                        <h4 class="checkout-section-heading">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            <span>Choose Payment Mode</span>
+                        </h4>
+
+                        <!-- Payment Method Radios -->
+                        <div class="payment-methods-grid">
+                            <!-- Option 1: Demo Razorpay Gateway -->
+                            <label class="payment-method-card active" id="pay-method-online-card">
+                                <div class="method-card-header">
+                                    <input type="radio" name="payment-method" value="online" checked>
+                                    <div class="method-title-box">
+                                        <span class="method-title">✦ Instant Online Payment (Razorpay Vault)</span>
+                                        <span class="method-subtitle">UPI, Credit/Debit Cards, NetBanking, 0% APR EMI</span>
+                                    </div>
+                                    <span class="method-badge-rec">RECOMMENDED</span>
+                                </div>
+                                <div class="method-gateways-icons">
+                                    <span class="gateway-tag">UPI / GPay / PhonePe</span>
+                                    <span class="gateway-tag">VISA</span>
+                                    <span class="gateway-tag">Mastercard</span>
+                                    <span class="gateway-tag">RuPay</span>
+                                    <span class="gateway-tag">NetBanking</span>
+                                </div>
+                            </label>
+
+                            <!-- Option 2: Cash on Delivery -->
+                            <label class="payment-method-card" id="pay-method-cod-card">
+                                <div class="method-card-header">
+                                    <input type="radio" name="payment-method" value="cod">
+                                    <div class="method-title-box">
+                                        <span class="method-title">✦ Cash / Card on Delivery (Armored Verification)</span>
+                                        <span class="method-subtitle">Physical inspection of tamper-evident seal before payment</span>
+                                    </div>
+                                </div>
+                                <p class="cod-note">Our armored courier executive will arrive with a secure verification device and tamper-evident sealed case at your doorstep.</p>
+                            </label>
+                        </div>
+
+                        <div class="delivery-address-recap" id="delivery-address-recap">
+                            <!-- Injected by JS: Address overview -->
+                        </div>
+
+                        <div class="checkout-step-actions">
+                            <button type="button" class="btn-checkout-back" id="btn-back-to-address">&larr; EDIT ADDRESS</button>
+                            <button type="button" class="btn-checkout-pay" id="btn-trigger-payment">
+                                <span class="lock-icon">🔒</span>
+                                <span id="btn-pay-label">PAY NOW VIA RAZORPAY</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Summary recap -->
+                    <div class="checkout-summary-column">
+                        <div class="checkout-summary-card">
+                            <h5 class="summary-card-title">FINAL INVESTMENT SUMMARY</h5>
+                            <div class="checkout-items-list" id="checkout-items-recap"></div>
+                            
+                            <div class="checkout-breakdown-list">
+                                <div class="breakdown-row">
+                                    <span>Subtotal</span>
+                                    <span id="checkout-subtotal-recap">₹0</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span>Armored Shipping</span>
+                                    <span class="free-badge">FREE</span>
+                                </div>
+                                <div class="breakdown-row total-row">
+                                    <span class="total-label">Payable Amount</span>
+                                    <span class="total-val" id="checkout-total-recap">₹0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: ROYAL ORDER PLACED SUCCESS RECEIPT -->
+            <div class="checkout-step-panel hidden" id="checkout-step-3">
+                <div class="order-placed-success-card">
+                    <div class="success-diamond-crest">
+                        <div class="diamond-sparkle-ring"></div>
+                        <span class="crest-symbol">✦</span>
+                    </div>
+
+                    <p class="success-kicker">HAUTE JOAILLERIE COMMISSION CONFIRMED</p>
+                    <h3 class="success-main-title">Thank You For Your Patronage</h3>
+                    <p class="success-subtitle">Your creation has been placed into atelier preparation. A master lapidary will inspect and seal your piece in our armored vault case.</p>
+
+                    <div class="order-details-card">
+                        <div class="order-id-badge-row">
+                            <span class="order-id-label">COMMISSION ORDER ID:</span>
+                            <span class="order-id-val" id="placed-order-id">PVL-2026-XXXXX</span>
+                        </div>
+
+                        <div class="order-info-meta-grid">
+                            <div class="meta-item">
+                                <span class="meta-label">Client Name</span>
+                                <span class="meta-val" id="placed-client-name">-</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Payment Status</span>
+                                <span class="meta-val gold-accent" id="placed-payment-status">PAID VIA RAZORPAY</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Estimated Delivery</span>
+                                <span class="meta-val" id="placed-delivery-date">3 - 5 Business Days</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Total Investment</span>
+                                <span class="meta-val" id="placed-total-val">₹0</span>
+                            </div>
+                        </div>
+
+                        <div class="placed-items-summary" id="placed-items-summary">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <div class="placed-delivery-address-box">
+                            <span class="address-box-label">✦ Armored Delivery Destination:</span>
+                            <p class="address-box-text" id="placed-address-text">-</p>
+                        </div>
+                    </div>
+
+                    <div class="order-success-actions">
+                        <a href="#" id="btn-whatsapp-track" class="btn-order-action btn-wa-track" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                            <span>TRACK ORDER ON WHATSAPP</span>
+                        </a>
+                        <button type="button" class="btn-order-action btn-continue-shopping" id="btn-checkout-finish">
+                            <span>CONTINUE BROWSING SHOWROOM</span>
+                            <span class="arrow">&rarr;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Demo Razorpay Gateway Popup -->
+    <div id="razorpay-demo-modal" class="razorpay-sim-backdrop hidden">
+        <div class="razorpay-sim-card">
+            <div class="rzp-header">
+                <div class="rzp-brand-row">
+                    <span class="rzp-logo">Razorpay</span>
+                    <span class="rzp-secure-badge">🔒 SECURE 256-BIT</span>
+                </div>
+                <div class="rzp-merchant-info">
+                    <span class="rzp-merchant-name">Pavelia Fine Lapidary Atelier</span>
+                    <span class="rzp-amount" id="rzp-modal-amount">₹0</span>
+                </div>
+                <button type="button" class="rzp-close-btn" id="rzp-modal-close">&times;</button>
+            </div>
+
+            <div class="rzp-body" id="rzp-body-content">
+                <div class="rzp-payment-tabs">
+                    <button type="button" class="rzp-tab active" data-rzp-tab="upi">UPI / QR</button>
+                    <button type="button" class="rzp-tab" data-rzp-tab="card">Cards</button>
+                    <button type="button" class="rzp-tab" data-rzp-tab="netbanking">NetBanking</button>
+                </div>
+
+                <div class="rzp-tab-panel" id="rzp-panel-upi">
+                    <div class="rzp-upi-apps">
+                        <div class="rzp-upi-app-item active" data-upi="gpay">
+                            <span class="upi-app-name">Google Pay</span>
+                            <span class="upi-radio">●</span>
+                        </div>
+                        <div class="rzp-upi-app-item" data-upi="phonepe">
+                            <span class="upi-app-name">PhonePe</span>
+                            <span class="upi-radio">○</span>
+                        </div>
+                        <div class="rzp-upi-app-item" data-upi="paytm">
+                            <span class="upi-app-name">Paytm UPI</span>
+                            <span class="upi-radio">○</span>
+                        </div>
+                    </div>
+                    <div class="rzp-vpa-input-box">
+                        <input type="text" id="rzp-vpa-input" placeholder="client@okhdfcbank" value="client@okaxis">
+                    </div>
+                </div>
+
+                <div class="rzp-tab-panel hidden" id="rzp-panel-card">
+                    <div class="rzp-card-form">
+                        <input type="text" class="rzp-input" placeholder="Card Number" value="4111 2222 3333 4444" maxlength="19">
+                        <div class="rzp-card-row">
+                            <input type="text" class="rzp-input" placeholder="MM / YY" value="12/28" maxlength="5">
+                            <input type="password" class="rzp-input" placeholder="CVV" value="999" maxlength="3">
+                        </div>
+                        <input type="text" class="rzp-input" placeholder="Cardholder Name" value="Ananya Sharma">
+                    </div>
+                </div>
+
+                <div class="rzp-tab-panel hidden" id="rzp-panel-netbanking">
+                    <div class="rzp-banks-grid">
+                        <div class="rzp-bank-pill active">HDFC Bank</div>
+                        <div class="rzp-bank-pill">ICICI Bank</div>
+                        <div class="rzp-bank-pill">SBI</div>
+                        <div class="rzp-bank-pill">Axis Bank</div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-rzp-pay-confirm" id="btn-rzp-pay-confirm">
+                    <span>COMPLETE DEMO PAYMENT</span>
+                </button>
+            </div>
+
+            <!-- Processing Spinner State -->
+            <div class="rzp-processing hidden" id="rzp-processing-state">
+                <div class="rzp-spinner"></div>
+                <p class="rzp-processing-text">Connecting to Secure Banking Vault...</p>
+                <span class="rzp-processing-sub">Do not close this window</span>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Logic -->
     <script src="app.js?v=5.0"></script>
 </body>
