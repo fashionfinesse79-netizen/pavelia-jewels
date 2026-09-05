@@ -522,6 +522,35 @@ function runClassicPreloader() {
 }
 
 /* ==========================================================================
+   2. DYNAMIC CATALOG STORAGE & DATA ACCESS LAYER
+   ========================================================================== */
+function getPaveliaCatalog() {
+    try {
+        const stored = localStorage.getItem('pavelia_catalog');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.warn('Pavelia catalog storage notice:', e);
+    }
+    return PAVELIA_PRODUCTS;
+}
+
+function savePaveliaCatalog(catalog) {
+    try {
+        localStorage.setItem('pavelia_catalog', JSON.stringify(catalog));
+    } catch (e) {
+        console.error('Error persisting Pavelia catalog:', e);
+    }
+}
+
+window.getPaveliaCatalog = getPaveliaCatalog;
+window.savePaveliaCatalog = savePaveliaCatalog;
+
+/* ==========================================================================
    3. SHOWROOM, WISHLIST, SEARCH & CART ARCHITECTURE
    ========================================================================== */
 function initializePaveliaCommerce() {
@@ -559,6 +588,8 @@ function initializePaveliaCommerce() {
             if (toast.parentNode) toast.parentNode.removeChild(toast);
         }, 400);
     }
+
+    window.showPaveliaToast = showToast;
 
     // 2. Application State Management
     let cart = JSON.parse(localStorage.getItem('pavelia_cart')) || [];
@@ -621,8 +652,10 @@ function initializePaveliaCommerce() {
     function renderShowroomProducts() {
         if (!productGridEl) return;
 
+        const catalog = getPaveliaCatalog();
+
         // 1. Filter by category
-        let filtered = PAVELIA_PRODUCTS.filter(item => {
+        let filtered = catalog.filter(item => {
             if (activeCategory === 'all') return true;
             return item.category === activeCategory;
         });
@@ -640,6 +673,7 @@ function initializePaveliaCommerce() {
         productGridEl.innerHTML = filtered.map(product => {
             const isWishlisted = wishlist.includes(product.id);
             const installmentPrice = Math.round(product.priceNum / 3).toLocaleString('en-IN');
+            const primaryImg = (product.images && product.images[0]) || product.image;
 
             return `
                 <div class="product-card" data-product-id="${product.id}">
@@ -660,13 +694,13 @@ function initializePaveliaCommerce() {
                     </div>
 
                     <div class="product-img-wrapper" data-id="${product.id}">
-                        <img src="${product.image}" alt="${product.name}" class="product-img" loading="lazy">
+                        <img src="${primaryImg}" alt="${product.name}" class="product-img" loading="lazy">
                     </div>
 
                     <div class="product-info">
-                        <span class="product-category-tag">${product.categoryLabel}</span>
+                        <span class="product-category-tag">${product.categoryLabel || product.category}</span>
                         <h4 class="product-name">${product.name}</h4>
-                        <p class="product-specs-line">${product.specs}</p>
+                        <p class="product-specs-line">${product.specs || ''}</p>
                         
                         <div class="product-price-row">
                             <span class="product-price">${product.price}</span>
@@ -700,15 +734,17 @@ function initializePaveliaCommerce() {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const productId = btn.dataset.id;
-                const product = PAVELIA_PRODUCTS.find(p => p.id === productId);
+                const product = getPaveliaCatalog().find(p => p.id === productId);
                 if (product) {
+                    const metals = (product.options && product.options.metal) || ['925 Sterling Silver'];
+                    const sizes = (product.options && product.options.size) || ['Standard'];
                     addToCart({
                         id: product.id,
                         name: product.name,
                         price: product.price,
-                        image: product.image,
-                        variantMetal: product.options.metal[0] || '925 Sterling Silver',
-                        variantSize: product.options.size[0] || 'Standard'
+                        image: (product.images && product.images[0]) || product.image,
+                        variantMetal: metals[0] || '925 Sterling Silver',
+                        variantSize: sizes[0] || 'Standard'
                     });
                 }
             });
@@ -924,19 +960,22 @@ function initializePaveliaCommerce() {
             const shopWishBtn = document.getElementById('btn-shop-now-wishlist');
             if (shopWishBtn) shopWishBtn.addEventListener('click', closeWishlistDrawer);
         } else {
-            const wishlistItems = wishlist.map(id => PAVELIA_PRODUCTS.find(p => p.id === id)).filter(Boolean);
+            const catalog = getPaveliaCatalog();
+            const wishlistItems = wishlist.map(id => catalog.find(p => p.id === id)).filter(Boolean);
             
             wishlistBody.innerHTML = `
                 <div class="wishlist-items-list">
-                    ${wishlistItems.map(product => `
+                    ${wishlistItems.map(product => {
+                        const primaryImg = (product.images && product.images[0]) || product.image;
+                        return `
                         <div class="wishlist-item">
                             <div class="wishlist-item-img-wrapper">
-                                <img src="${product.image}" alt="${product.name}" class="wishlist-item-img">
+                                <img src="${primaryImg}" alt="${product.name}" class="wishlist-item-img">
                             </div>
                             <div class="wishlist-item-details">
                                 <div>
                                     <h5 class="wishlist-item-name">${product.name}</h5>
-                                    <p class="wishlist-item-variant">${product.specs}</p>
+                                    <p class="wishlist-item-variant">${product.specs || ''}</p>
                                     <span class="wishlist-item-price">${product.price}</span>
                                 </div>
                                 <div class="cart-item-controls">
@@ -945,22 +984,24 @@ function initializePaveliaCommerce() {
                                 </div>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
 
             wishlistBody.querySelectorAll('.btn-wishlist-add-bag').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.id;
-                    const product = PAVELIA_PRODUCTS.find(p => p.id === id);
+                    const product = getPaveliaCatalog().find(p => p.id === id);
                     if (product) {
+                        const metals = (product.options && product.options.metal) || ['925 Sterling Silver'];
+                        const sizes = (product.options && product.options.size) || ['Standard'];
                         addToCart({
                             id: product.id,
                             name: product.name,
                             price: product.price,
-                            image: product.image,
-                            variantMetal: product.options.metal[0] || '925 Sterling Silver',
-                            variantSize: product.options.size[0] || 'Standard'
+                            image: (product.images && product.images[0]) || product.image,
+                            variantMetal: metals[0] || '925 Sterling Silver',
+                            variantSize: sizes[0] || 'Standard'
                         });
                         toggleWishlist(id);
                         closeWishlistDrawer();
@@ -978,7 +1019,7 @@ function initializePaveliaCommerce() {
 
     function toggleWishlist(productId) {
         const idx = wishlist.indexOf(productId);
-        const product = PAVELIA_PRODUCTS.find(p => p.id === productId);
+        const product = getPaveliaCatalog().find(p => p.id === productId);
         if (idx > -1) {
             wishlist.splice(idx, 1);
             if (product) showToast(`Removed "${product.name}" from your Private Vault.`);
@@ -1044,11 +1085,13 @@ function initializePaveliaCommerce() {
 
         if (clearSearchBtn) clearSearchBtn.style.display = 'block';
 
-        const matches = PAVELIA_PRODUCTS.filter(item => 
-            item.name.toLowerCase().includes(q) ||
-            item.category.toLowerCase().includes(q) ||
-            item.desc.toLowerCase().includes(q) ||
-            item.specs.toLowerCase().includes(q)
+        const catalog = getPaveliaCatalog();
+        const matches = catalog.filter(item => 
+            (item.name && item.name.toLowerCase().includes(q)) ||
+            (item.category && item.category.toLowerCase().includes(q)) ||
+            (item.desc && item.desc.toLowerCase().includes(q)) ||
+            (item.specs && item.specs.toLowerCase().includes(q)) ||
+            (item.id && item.id.toLowerCase().includes(q))
         );
 
         if (matches.length === 0) {
@@ -1056,18 +1099,20 @@ function initializePaveliaCommerce() {
                 <p class="search-prompt-text">No pieces matching "${query}". Try searching for Solitaire, Emerald, Tennis, or Choker.</p>
             `;
         } else {
-            searchResultsContainer.innerHTML = matches.map(product => `
+            searchResultsContainer.innerHTML = matches.map(product => {
+                const primaryImg = (product.images && product.images[0]) || product.image;
+                return `
                 <div class="search-result-item" data-id="${product.id}">
                     <div class="search-result-left">
-                        <img src="${product.image}" alt="${product.name}" class="search-result-img">
+                        <img src="${primaryImg}" alt="${product.name}" class="search-result-img">
                         <div>
                             <h5 class="search-result-title">${product.name}</h5>
-                            <span class="product-category-tag">${product.categoryLabel}</span>
+                            <span class="product-category-tag">${product.categoryLabel || product.category}</span>
                         </div>
                     </div>
                     <span class="search-result-price">${product.price}</span>
                 </div>
-            `).join('');
+            `}).join('');
 
             searchResultsContainer.querySelectorAll('.search-result-item').forEach(item => {
                 item.addEventListener('click', () => {
@@ -1110,37 +1155,45 @@ function initializePaveliaCommerce() {
     // PRODUCT QUICK VIEW MODAL
     // -------------------------------------------------------------
     function openQuickview(productId) {
-        const product = PAVELIA_PRODUCTS.find(p => p.id === productId);
+        const catalog = getPaveliaCatalog();
+        const product = catalog.find(p => p.id === productId);
         if (!product || !quickviewModal || !quickviewContent) return;
+
+        const imagesList = Array.isArray(product.images) && product.images.length > 0 
+            ? product.images 
+            : [product.image].filter(Boolean);
+        const primaryImg = imagesList[0] || product.image;
+        const metals = (product.options && product.options.metal) || ['925 Sterling Silver', '18K Yellow Gold Vermeil', '950 Platinum'];
+        const sizes = (product.options && product.options.size) || ['Standard'];
 
         quickviewContent.innerHTML = `
             <div class="quickview-grid">
                 <div class="quickview-img-side">
-                    <img src="${product.image}" alt="${product.name}" id="qv-main-img">
+                    <img src="${primaryImg}" alt="${product.name}" id="qv-main-img">
                 </div>
                 <div class="quickview-info-side">
                     <div>
                         <p class="quickview-pretitle">PAVELIA HAUTE JOAILLERIE • GIA CERTIFIED</p>
                         <h3 class="quickview-title">${product.name}</h3>
                         <p class="quickview-price">${product.price}</p>
-                        <p class="quickview-desc">${product.desc}</p>
+                        <p class="quickview-desc">${product.desc || ''}</p>
                         
                         <!-- Metal Option Selection -->
                         <div class="quickview-selector-group">
                             <span class="quickview-label">PRECIOUS METAL FINISH</span>
                             <div class="quickview-options" id="qv-metal-options">
-                                ${product.options.metal.map((metal, i) => `
+                                ${metals.map((metal, i) => `
                                     <button class="option-btn ${i === 0 ? 'active' : ''}" data-value="${metal}">${metal}</button>
                                 `).join('')}
                             </div>
                         </div>
 
                         <!-- Size Selection -->
-                        ${product.options.size && product.options.size[0] !== 'Standard' ? `
+                        ${sizes && sizes[0] !== 'Standard' ? `
                             <div class="quickview-selector-group">
                                 <span class="quickview-label">CHOOSE SIZE</span>
                                 <div class="quickview-options" id="qv-size-options">
-                                    ${product.options.size.map((size, i) => `
+                                    ${sizes.map((size, i) => `
                                         <button class="option-btn ${i === 0 ? 'active' : ''}" data-value="${size}">${size}</button>
                                     `).join('')}
                                 </div>
@@ -1174,14 +1227,14 @@ function initializePaveliaCommerce() {
         const qvAddBagBtn = document.getElementById('btn-qv-add-bag');
         if (qvAddBagBtn) {
             qvAddBagBtn.addEventListener('click', () => {
-                const activeMetal = document.querySelector('#qv-metal-options .option-btn.active')?.dataset.value || product.options.metal[0];
-                const activeSize = document.querySelector('#qv-size-options .option-btn.active')?.dataset.value || product.options.size[0] || 'Standard';
+                const activeMetal = document.querySelector('#qv-metal-options .option-btn.active')?.dataset.value || metals[0];
+                const activeSize = document.querySelector('#qv-size-options .option-btn.active')?.dataset.value || sizes[0] || 'Standard';
 
                 addToCart({
                     id: product.id,
                     name: product.name,
                     price: product.price,
-                    image: product.image,
+                    image: primaryImg,
                     variantMetal: activeMetal,
                     variantSize: activeSize
                 });
@@ -1261,6 +1314,10 @@ function initializePaveliaCommerce() {
         });
     }
 
+    // Expose helpers globally
+    window.renderShowroomProducts = renderShowroomProducts;
+    window.openQuickview = openQuickview;
+
     // Initial Loadings
     renderShowroomProducts();
     updateCartUI();
@@ -1323,7 +1380,375 @@ function initializeNavigation() {
 }
 
 /* ==========================================================================
-   5. ATELIER AUTHENTICATION & CLOUD SESSION MANAGER
+   5. DEDICATED FULL-VIEW MAISON ADMIN DASHBOARD
+   ========================================================================== */
+function initializeAdminDashboard() {
+    const adminDashboard = document.getElementById('admin-fullview-dashboard');
+    const floatingReturnBtn = document.getElementById('admin-floating-return-btn');
+    const btnOpenAddProduct = document.getElementById('btn-admin-open-add');
+    const btnPreviewStorefront = document.getElementById('btn-admin-preview-storefront');
+    const btnTopLogout = document.getElementById('btn-admin-top-logout');
+    
+    const adminProductSearch = document.getElementById('admin-product-search');
+    const adminCategoryFilter = document.getElementById('admin-category-filter');
+    const adminProductsTbody = document.getElementById('admin-products-tbody');
+    const adminTabCount = document.getElementById('admin-tab-prod-count');
+    
+    // Product Modal Elements
+    const productModal = document.getElementById('admin-product-modal');
+    const productModalTitle = document.getElementById('admin-modal-title');
+    const productModalCloseBtn = document.getElementById('admin-product-modal-close');
+    const productCancelBtn = document.getElementById('btn-admin-product-cancel');
+    const productForm = document.getElementById('admin-product-form');
+    
+    // Form Inputs
+    const formProductId = document.getElementById('form-product-id');
+    const formProductName = document.getElementById('form-product-name');
+    const formProductCategory = document.getElementById('form-product-category');
+    const formProductPrice = document.getElementById('form-product-price');
+    const formProductInventory = document.getElementById('form-product-inventory');
+    const formProductBadge = document.getElementById('form-product-badge');
+    const formProductStatus = document.getElementById('form-product-status');
+    const formProductSpecs = document.getElementById('form-product-specs');
+    const formProductImage = document.getElementById('form-product-image');
+    const formProductImage2 = document.getElementById('form-product-image2');
+
+    window.openAdminFullview = () => {
+        if (adminDashboard) {
+            adminDashboard.classList.remove('hidden');
+            document.body.classList.add('lock-scroll');
+        }
+        if (floatingReturnBtn) {
+            floatingReturnBtn.classList.add('hidden');
+        }
+        renderAdminProductsTable();
+    };
+
+    window.closeAdminFullview = (showFloatingReturn = false) => {
+        if (adminDashboard) {
+            adminDashboard.classList.add('hidden');
+            document.body.classList.remove('lock-scroll');
+        }
+        if (showFloatingReturn && floatingReturnBtn) {
+            const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+            if (cachedUser && (cachedUser.role === 'admin' || cachedUser.email === 'admin@pavelia.com')) {
+                floatingReturnBtn.classList.remove('hidden');
+            }
+        } else if (floatingReturnBtn) {
+            floatingReturnBtn.classList.add('hidden');
+        }
+    };
+
+    function renderAdminProductsTable() {
+        if (!adminProductsTbody) return;
+
+        const catalog = getPaveliaCatalog();
+        if (adminTabCount) {
+            adminTabCount.textContent = catalog.length;
+        }
+
+        const searchTerm = (adminProductSearch ? adminProductSearch.value : '').trim().toLowerCase();
+        const selectedCat = (adminCategoryFilter ? adminCategoryFilter.value : 'all').toLowerCase();
+
+        let filtered = catalog.filter(item => {
+            const matchesCategory = (selectedCat === 'all' || (item.category && item.category.toLowerCase() === selectedCat));
+            const matchesSearch = !searchTerm ||
+                (item.name && item.name.toLowerCase().includes(searchTerm)) ||
+                (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+                (item.specs && item.specs.toLowerCase().includes(searchTerm)) ||
+                (item.id && item.id.toLowerCase().includes(searchTerm));
+            return matchesCategory && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+            adminProductsTbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--color-text-subtle); font-style: italic;">
+                        No creations found matching the active search or category filters.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        adminProductsTbody.innerHTML = filtered.map(product => {
+            const imagesList = Array.isArray(product.images) && product.images.length > 0 
+                ? product.images 
+                : [product.image].filter(Boolean);
+            const imageCount = imagesList.length;
+            const primaryImg = imagesList[0] || product.image || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=700';
+
+            const status = product.status || 'IN STOCK';
+            let statusClass = '';
+            if (status === 'LIMITED RUN') statusClass = 'limited';
+            else if (status === 'VAULT EXCLUSIVE' || status === 'MADE TO ORDER') statusClass = 'vault';
+
+            const inventoryText = product.inventory || '8 pcs';
+            const priceFormatted = product.price || ('₹' + (product.priceNum || 0).toLocaleString('en-IN'));
+
+            return `
+                <tr data-product-id="${product.id}">
+                    <td class="td-item">
+                        <div class="admin-item-cell">
+                            <div class="admin-item-img-box">
+                                <img src="${primaryImg}" alt="${product.name}" loading="lazy">
+                                ${imageCount > 1 ? `<span class="admin-item-img-count" title="${imageCount} Images">${imageCount}</span>` : ''}
+                            </div>
+                            <div class="admin-item-meta">
+                                <div class="admin-item-title-text">${product.name}</div>
+                                <div class="admin-item-subline">
+                                    <span class="admin-item-sku">#${product.id.toUpperCase()}</span>
+                                    <span>•</span>
+                                    <span>${product.specs || 'Certified Fine Jewel'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="td-category">
+                        <span class="admin-category-text">${product.category ? product.category.toUpperCase() : 'FINE JEWELRY'}</span>
+                    </td>
+                    <td class="td-price">
+                        <span class="admin-price-text">${priceFormatted}</span>
+                    </td>
+                    <td class="td-inventory">
+                        <span class="admin-inventory-text">${inventoryText}</span>
+                    </td>
+                    <td class="td-status">
+                        <span class="status-pill ${statusClass}">● ${status}</span>
+                    </td>
+                    <td class="td-actions">
+                        <div class="admin-action-btns">
+                            <button type="button" class="btn-table-action btn-edit" data-id="${product.id}" title="Edit Creation">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-table-action btn-view" data-id="${product.id}" title="View in Showroom">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-table-action btn-delete" data-id="${product.id}" title="Retire Creation">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Bind table row buttons
+        adminProductsTbody.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                openEditProductModal(id);
+            });
+        });
+
+        adminProductsTbody.querySelectorAll('.btn-view').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                window.closeAdminFullview(true);
+                const showroom = document.getElementById('showroom');
+                if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+                if (typeof window.openQuickview === 'function') {
+                    setTimeout(() => window.openQuickview(id), 500);
+                }
+            });
+        });
+
+        adminProductsTbody.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                handleDeleteProduct(id);
+            });
+        });
+    }
+
+    function openAddProductModal() {
+        if (!productModal || !productForm) return;
+        productForm.reset();
+        if (formProductId) formProductId.value = '';
+        if (productModalTitle) productModalTitle.textContent = 'ADD NEW CREATION';
+        if (formProductCategory) formProductCategory.value = 'rings';
+        if (formProductStatus) formProductStatus.value = 'IN STOCK';
+        if (formProductInventory) formProductInventory.value = '8 pcs';
+        productModal.classList.remove('hidden');
+    }
+
+    function openEditProductModal(productId) {
+        if (!productModal || !productForm) return;
+        const catalog = getPaveliaCatalog();
+        const product = catalog.find(p => p.id === productId);
+        if (!product) return;
+
+        if (formProductId) formProductId.value = product.id;
+        if (productModalTitle) productModalTitle.textContent = `EDIT CREATION: ${product.name}`;
+        if (formProductName) formProductName.value = product.name || '';
+        if (formProductCategory) formProductCategory.value = product.category || 'rings';
+        if (formProductPrice) formProductPrice.value = product.priceNum || parseInt(String(product.price).replace(/[^\d]/g, ''), 10) || 0;
+        if (formProductInventory) formProductInventory.value = product.inventory || '8 pcs';
+        if (formProductBadge) formProductBadge.value = product.badge ? product.badge.replace(/^✦\s*/, '') : '';
+        if (formProductStatus) formProductStatus.value = product.status || 'IN STOCK';
+        if (formProductSpecs) formProductSpecs.value = product.specs || '';
+        
+        const imagesList = Array.isArray(product.images) && product.images.length > 0 
+            ? product.images 
+            : [product.image].filter(Boolean);
+        if (formProductImage) formProductImage.value = imagesList[0] || product.image || '';
+        if (formProductImage2) formProductImage2.value = imagesList[1] || '';
+
+        productModal.classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+        if (productModal) productModal.classList.add('hidden');
+    }
+
+    function handleProductFormSubmit(e) {
+        e.preventDefault();
+        const id = formProductId ? formProductId.value.trim() : '';
+        const name = formProductName ? formProductName.value.trim() : '';
+        const category = formProductCategory ? formProductCategory.value : 'rings';
+        const priceNum = formProductPrice ? parseInt(formProductPrice.value, 10) : 0;
+        const inventory = formProductInventory ? formProductInventory.value.trim() : '8 pcs';
+        const badgeRaw = formProductBadge ? formProductBadge.value.trim() : '';
+        const status = formProductStatus ? formProductStatus.value : 'IN STOCK';
+        const specs = formProductSpecs ? formProductSpecs.value.trim() : '';
+        const image = formProductImage ? formProductImage.value.trim() : '';
+        const image2 = formProductImage2 ? formProductImage2.value.trim() : '';
+
+        if (!name || !image || isNaN(priceNum) || priceNum <= 0) {
+            alert('Please provide a valid Creation Title, Price, and Primary Image URL.');
+            return;
+        }
+
+        const images = image2 ? [image, image2] : [image];
+        const badgeFormatted = badgeRaw ? (badgeRaw.startsWith('✦') ? badgeRaw : `✦ ${badgeRaw}`) : '✦ SIGNATURE PIECE';
+        const priceFormatted = `₹${priceNum.toLocaleString('en-IN')}`;
+        const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+
+        let catalog = getPaveliaCatalog();
+
+        if (id) {
+            // Edit existing product
+            const index = catalog.findIndex(p => p.id === id);
+            if (index !== -1) {
+                catalog[index] = {
+                    ...catalog[index],
+                    name,
+                    category,
+                    categoryLabel,
+                    price: priceFormatted,
+                    priceNum,
+                    inventory,
+                    status,
+                    badge: badgeFormatted,
+                    specs: specs || catalog[index].specs || 'Master Cut • 18K Solid Gold / Platinum',
+                    image,
+                    images
+                };
+            }
+        } else {
+            // Add new creation
+            const newId = `${category}-${Date.now().toString().slice(-6)}`;
+            const newProduct = {
+                id: newId,
+                name,
+                category,
+                categoryLabel,
+                price: priceFormatted,
+                priceNum,
+                inventory,
+                status,
+                badge: badgeFormatted,
+                specs: specs || 'Handcrafted Fine Atelier Creation',
+                image,
+                images,
+                desc: `${name} is an exquisite high jewelry creation, hand-burnished by master lapidaries to evoke timeless poise.`,
+                options: {
+                    metal: ['925 Sterling Silver', '18K Yellow Gold Vermeil', '950 Solid Platinum'],
+                    size: category === 'rings' ? ['6', '7', '8', '9'] : ['Standard']
+                }
+            };
+            catalog.unshift(newProduct);
+        }
+
+        savePaveliaCatalog(catalog);
+        closeProductModal();
+        renderAdminProductsTable();
+        
+        // Update storefront showroom and counts
+        if (typeof window.renderShowroomProducts === 'function') {
+            window.renderShowroomProducts();
+        }
+
+        // Show toast notification
+        const showToastFn = window.showPaveliaToast || alert;
+        showToastFn(`✦ Creation "${name}" has been saved to the Maison catalog.`);
+    }
+
+    function handleDeleteProduct(productId) {
+        let catalog = getPaveliaCatalog();
+        const product = catalog.find(p => p.id === productId);
+        if (!product) return;
+
+        if (confirm(`Are you sure you wish to retire "${product.name}" (#${product.id.toUpperCase()}) from the live catalog?`)) {
+            catalog = catalog.filter(p => p.id !== productId);
+            savePaveliaCatalog(catalog);
+            renderAdminProductsTable();
+            if (typeof window.renderShowroomProducts === 'function') {
+                window.renderShowroomProducts();
+            }
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ "${product.name}" has been retired from the live showroom.`);
+        }
+    }
+
+    // Event Listeners
+    if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);
+    if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', closeProductModal);
+    if (productCancelBtn) productCancelBtn.addEventListener('click', closeProductModal);
+    if (productForm) productForm.addEventListener('submit', handleProductFormSubmit);
+    
+    if (adminProductSearch) adminProductSearch.addEventListener('input', renderAdminProductsTable);
+    if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', renderAdminProductsTable);
+    
+    if (btnPreviewStorefront) {
+        btnPreviewStorefront.addEventListener('click', () => {
+            window.closeAdminFullview(true);
+            const showroom = document.getElementById('showroom');
+            if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    if (floatingReturnBtn) {
+        floatingReturnBtn.addEventListener('click', () => {
+            window.openAdminFullview();
+        });
+    }
+
+    if (btnTopLogout) {
+        btnTopLogout.addEventListener('click', () => {
+            if (typeof window.paveliaAdminLogout === 'function') {
+                window.paveliaAdminLogout();
+            } else {
+                localStorage.removeItem('pavelia_token');
+                localStorage.removeItem('pavelia_user_profile');
+                window.closeAdminFullview(false);
+                location.reload();
+            }
+        });
+    }
+}
+
+/* ==========================================================================
+   6. ATELIER AUTHENTICATION & CLOUD SESSION MANAGER
    ========================================================================== */
 function initializeAuth() {
     const accountBtn = document.getElementById('account-btn');
@@ -1382,6 +1807,10 @@ function initializeAuth() {
     };
 
     function showAuthToast(msg) {
+        if (typeof window.showPaveliaToast === 'function') {
+            window.showPaveliaToast(msg);
+            return;
+        }
         let toastContainer = document.querySelector('.luxury-toast-container');
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -1444,17 +1873,20 @@ function initializeAuth() {
     });
 
     const openAuthModal = (targetTab) => {
+        const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+        if (userToken && isAdmin(cachedUser)) {
+            if (typeof window.openAdminFullview === 'function') {
+                window.openAdminFullview();
+                return;
+            }
+        }
+
         if (authModal) {
             authModal.classList.add('active');
             document.body.classList.add('lock-scroll');
-            const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
             const authContainer = document.querySelector('.auth-container');
 
-            if (userToken && isAdmin(cachedUser)) {
-                if (authContainer) authContainer.classList.add('admin-mode');
-                updateAdminDashboardDetails();
-                showPanel(adminPanel);
-            } else if (userToken) {
+            if (userToken) {
                 if (authContainer) authContainer.classList.remove('admin-mode');
                 updateDashboardDetails();
                 showPanel(dashboardPanel);
@@ -1486,7 +1918,19 @@ function initializeAuth() {
 
     if (switchToSignup) switchToSignup.addEventListener('click', (e) => { e.preventDefault(); showPanel(signupPanel); });
     if (switchToSignin) switchToSignin.addEventListener('click', (e) => { e.preventDefault(); showPanel(signinPanel); });
-    if (accountBtn) accountBtn.addEventListener('click', (e) => { e.preventDefault(); openAuthModal(); });
+    if (accountBtn) {
+        accountBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+            if (userToken && isAdmin(cachedUser)) {
+                if (typeof window.openAdminFullview === 'function') {
+                    window.openAdminFullview();
+                    return;
+                }
+            }
+            openAuthModal();
+        });
+    }
     if (authCloseBtn) authCloseBtn.addEventListener('click', closeAuthModal);
     if (authOverlay) authOverlay.addEventListener('click', closeAuthModal);
 
@@ -1504,7 +1948,7 @@ function initializeAuth() {
         const catalogCount = document.getElementById('admin-catalog-count');
         const listEl = document.getElementById('admin-inventory-list');
 
-        const products = window.PAVELIA_PRODUCTS || [];
+        const products = getPaveliaCatalog();
         if (prodStat) prodStat.textContent = products.length;
         if (catalogCount) catalogCount.textContent = `${products.length} Pieces`;
         if (catStat) catStat.textContent = '5';
@@ -1517,7 +1961,7 @@ function initializeAuth() {
             listEl.innerHTML = products.map(p => `
                 <div class="admin-inventory-item">
                     <div class="admin-item-left">
-                        <img src="${p.image}" alt="${p.name}" class="admin-item-thumb">
+                        <img src="${(p.images && p.images[0]) || p.image}" alt="${p.name}" class="admin-item-thumb">
                         <div>
                             <div class="admin-item-title">${p.name}</div>
                             <div class="admin-item-category">${p.category ? p.category.toUpperCase() : 'FINE JEWELRY'}</div>
@@ -1564,6 +2008,13 @@ function initializeAuth() {
             accountBtn.parentNode.insertBefore(welcomeBadge, accountBtn);
             welcomeBadge.addEventListener('click', (e) => {
                 e.preventDefault();
+                const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+                if (userToken && isAdmin(cachedUser)) {
+                    if (typeof window.openAdminFullview === 'function') {
+                        window.openAdminFullview();
+                        return;
+                    }
+                }
                 openAuthModal();
             });
         }
@@ -1599,7 +2050,18 @@ function initializeAuth() {
             if (authContainer) authContainer.classList.remove('admin-mode');
             if (welcomeBadge) welcomeBadge.style.display = 'none';
             if (accountBtn) accountBtn.style.color = '';
+            if (typeof window.closeAdminFullview === 'function') {
+                window.closeAdminFullview(false);
+            }
         }
+    };
+
+    window.paveliaAdminLogout = () => {
+        updateHeaderAuthState(null);
+        if (typeof window.closeAdminFullview === 'function') {
+            window.closeAdminFullview(false);
+        }
+        showAuthToast('✦ Maison Admin session closed securely.');
     };
 
     // Instant cached profile restore for zero UI flicker
@@ -1629,7 +2091,6 @@ function initializeAuth() {
                 }
             }
         } catch (err) {
-            // If offline, continue with cached user profile
             console.warn('Session verify note: using offline cached credentials.');
         }
     };
@@ -1731,7 +2192,6 @@ function initializeAuth() {
                 }
 
                 if (registrationSuccess) {
-                    // Auto-login user for seamless luxury experience
                     saveLocalUser({ firstName, lastName, email, password, role: 'customer' });
                     const simulatedToken = 'pvl_' + btoa(JSON.stringify({ email, firstName, time: Date.now() }));
                     userToken = simulatedToken;
@@ -1792,7 +2252,7 @@ function initializeAuth() {
                 let authUser = null;
                 let token = null;
 
-                // Dedicated local check for master admin
+                // Dedicated check for master admin
                 if (email === 'admin@pavelia.com' && password === 'admin123') {
                     authenticated = true;
                     token = 'pvl_admin_' + Date.now();
@@ -1841,16 +2301,16 @@ function initializeAuth() {
                     localStorage.setItem('pavelia_token', userToken);
                     updateHeaderAuthState(authUser);
 
-                    if (isAdmin(authUser)) {
-                        showAuthToast(`✦ Welcome to Executive Maison Suite, Owner.`);
-                    } else {
-                        showAuthToast(`✦ Signed in as ${authUser.firstName}. Welcome back.`);
-                    }
-
                     signinForm.reset();
                     closeAuthModal();
 
-                    if (!isAdmin(authUser)) {
+                    if (isAdmin(authUser)) {
+                        showAuthToast(`✦ Welcome to Executive Maison Suite, Owner.`);
+                        if (typeof window.openAdminFullview === 'function') {
+                            window.openAdminFullview();
+                        }
+                    } else {
+                        showAuthToast(`✦ Signed in as ${authUser.firstName}. Welcome back.`);
                         const localCart = JSON.parse(localStorage.getItem('pavelia_cart')) || [];
                         if (localCart.length > 0) {
                             await window.syncCartToCloud(localCart);
@@ -1884,8 +2344,9 @@ function initializeAuth() {
     if (btnAdminLogout) {
         btnAdminLogout.addEventListener('click', (e) => {
             e.preventDefault();
-            updateHeaderAuthState(null);
-            showAuthToast('✦ Maison Admin session closed securely.');
+            if (typeof window.paveliaAdminLogout === 'function') {
+                window.paveliaAdminLogout();
+            }
             closeAuthModal();
         });
     }
@@ -1903,12 +2364,13 @@ function initializeAuth() {
 }
 
 /* ==========================================================================
-   6. BOOTSTRAP APPLICATION
+   7. BOOTSTRAP APPLICATION
    ========================================================================== */
 function initApp() {
     runClassicPreloader();
     initializePaveliaCommerce();
     initializeNavigation();
+    initializeAdminDashboard();
     initializeAuth();
 }
 
