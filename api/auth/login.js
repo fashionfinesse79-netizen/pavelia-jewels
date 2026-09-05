@@ -27,6 +27,33 @@ module.exports = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+
+        // 1. Dedicated Master Admin Check
+        if (normalizedEmail === 'admin@pavelia.com' && password === 'admin123') {
+            const token = jwt.sign(
+                {
+                    userId: 'admin_pavelia_001',
+                    email: 'admin@pavelia.com',
+                    firstName: 'Maison',
+                    lastName: 'Owner',
+                    role: 'admin'
+                },
+                JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+
+            return res.status(200).json({
+                message: 'Welcome to the Executive Atelier Management Suite.',
+                token,
+                user: {
+                    firstName: 'Maison',
+                    lastName: 'Owner',
+                    email: 'admin@pavelia.com',
+                    role: 'admin'
+                }
+            });
+        }
+
         let user = null;
 
         const db = await connectToDatabase();
@@ -62,7 +89,8 @@ module.exports = async (req, res) => {
                 userId,
                 email: user.email,
                 firstName: user.firstName,
-                lastName: user.lastName || ''
+                lastName: user.lastName || '',
+                role: user.role || 'customer'
             },
             JWT_SECRET,
             { expiresIn: '30d' }

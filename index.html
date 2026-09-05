@@ -927,6 +927,61 @@
 
                     <button class="btn-logout" id="btn-logout">SECURE LOGOUT</button>
                 </div>
+
+                <!-- Tab 4: EXECUTIVE MAISON ADMIN PANEL (Owner Suite) -->
+                <div class="auth-panel hidden" id="admin-panel">
+                    <div class="admin-header-row">
+                        <div>
+                            <span class="auth-crest">✦</span>
+                            <h4 class="auth-title">MAISON ADMIN SUITE</h4>
+                            <p class="auth-subtitle">Welcome, Atelier Owner. Global boutique overview &amp; live catalog metrics.</p>
+                        </div>
+                        <span class="admin-badge-live">● OWNER ACCESS</span>
+                    </div>
+                    
+                    <!-- Executive Metric Cards -->
+                    <div class="admin-metrics-grid">
+                        <div class="admin-metric-card">
+                            <span class="admin-metric-num" id="admin-stat-products">20</span>
+                            <span class="admin-metric-label">Showroom Masterpieces</span>
+                        </div>
+                        <div class="admin-metric-card">
+                            <span class="admin-metric-num" id="admin-stat-categories">5</span>
+                            <span class="admin-metric-label">Curated Collections</span>
+                        </div>
+                        <div class="admin-metric-card">
+                            <span class="admin-metric-num" id="admin-stat-cart-val">₹0</span>
+                            <span class="admin-metric-label">Live Client Interest</span>
+                        </div>
+                        <div class="admin-metric-card">
+                            <span class="admin-metric-num" id="admin-stat-status">ACTIVE</span>
+                            <span class="admin-metric-label">Atelier Gateway</span>
+                        </div>
+                    </div>
+
+                    <!-- Showroom Catalog Overview -->
+                    <div class="admin-inventory-section">
+                        <div class="admin-section-header">
+                            <h5 class="orders-title">LIVE HIGH JEWELRY CATALOG</h5>
+                            <span class="admin-count-pill" id="admin-catalog-count">20 Pieces</span>
+                        </div>
+                        <div class="admin-inventory-list" id="admin-inventory-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Executive Quick Actions -->
+                    <div class="admin-actions-row">
+                        <button type="button" class="btn-admin-action" id="btn-admin-view-store">
+                            <span>VIEW CLIENT STOREFRONT &rarr;</span>
+                        </button>
+                        <a href="https://wa.me/919131570759?text=Hello%20Pavelia%20Atelier%20Owner%20Terminal" target="_blank" rel="noopener noreferrer" class="btn-admin-action btn-admin-wa">
+                            <span>WHATSAPP CONCIERGE TERMINAL &rarr;</span>
+                        </a>
+                    </div>
+
+                    <button class="btn-logout" id="btn-admin-logout">SECURE ADMIN LOGOUT</button>
+                </div>
             </div>
         </div>
 

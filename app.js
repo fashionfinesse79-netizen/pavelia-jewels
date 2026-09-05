@@ -1334,6 +1334,7 @@ function initializeAuth() {
     const signinPanel = document.getElementById('signin-panel');
     const signupPanel = document.getElementById('signup-panel');
     const dashboardPanel = document.getElementById('dashboard-panel');
+    const adminPanel = document.getElementById('admin-panel');
 
     const signinForm = document.getElementById('signin-form');
     const signupForm = document.getElementById('signup-form');
@@ -1343,6 +1344,8 @@ function initializeAuth() {
     const switchToSignup = document.getElementById('switch-to-signup');
     const switchToSignin = document.getElementById('switch-to-signin');
     const logoutBtn = document.getElementById('btn-logout');
+    const btnAdminLogout = document.getElementById('btn-admin-logout');
+    const btnAdminViewStore = document.getElementById('btn-admin-view-store');
 
     const signinError = document.getElementById('signin-error');
     const signupError = document.getElementById('signup-error');
@@ -1352,6 +1355,11 @@ function initializeAuth() {
     const dashboardOrdersList = document.getElementById('dashboard-orders-list');
 
     let userToken = localStorage.getItem('pavelia_token') || null;
+
+    // Helper: Check if user is Maison Administrator
+    const isAdmin = (user) => {
+        return Boolean(user && (user.role === 'admin' || user.email === 'admin@pavelia.com'));
+    };
 
     // Local resilient user backup store
     const getLocalUsers = () => {
@@ -1439,12 +1447,22 @@ function initializeAuth() {
         if (authModal) {
             authModal.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (userToken) {
+            const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
+            const authContainer = document.querySelector('.auth-container');
+
+            if (userToken && isAdmin(cachedUser)) {
+                if (authContainer) authContainer.classList.add('admin-mode');
+                updateAdminDashboardDetails();
+                showPanel(adminPanel);
+            } else if (userToken) {
+                if (authContainer) authContainer.classList.remove('admin-mode');
                 updateDashboardDetails();
                 showPanel(dashboardPanel);
             } else if (targetTab === 'signup') {
+                if (authContainer) authContainer.classList.remove('admin-mode');
                 showPanel(signupPanel);
             } else {
+                if (authContainer) authContainer.classList.remove('admin-mode');
                 showPanel(signinPanel);
             }
         }
@@ -1460,7 +1478,7 @@ function initializeAuth() {
     };
 
     const showPanel = (panelToShow) => {
-        [signinPanel, signupPanel, dashboardPanel].forEach(panel => {
+        [signinPanel, signupPanel, dashboardPanel, adminPanel].forEach(panel => {
             if (panel) panel.classList.add('hidden');
         });
         if (panelToShow) panelToShow.classList.remove('hidden');
@@ -1478,6 +1496,41 @@ function initializeAuth() {
             closeAuthModal();
         }
     });
+
+    const updateAdminDashboardDetails = () => {
+        const prodStat = document.getElementById('admin-stat-products');
+        const catStat = document.getElementById('admin-stat-categories');
+        const cartValStat = document.getElementById('admin-stat-cart-val');
+        const catalogCount = document.getElementById('admin-catalog-count');
+        const listEl = document.getElementById('admin-inventory-list');
+
+        const products = window.PAVELIA_PRODUCTS || [];
+        if (prodStat) prodStat.textContent = products.length;
+        if (catalogCount) catalogCount.textContent = `${products.length} Pieces`;
+        if (catStat) catStat.textContent = '5';
+
+        const cartItems = JSON.parse(localStorage.getItem('pavelia_cart') || '[]');
+        const cartTotal = cartItems.reduce((acc, it) => acc + ((it.price || 0) * (it.quantity || 1)), 0);
+        if (cartValStat) cartValStat.textContent = `₹${cartTotal.toLocaleString('en-IN')}`;
+
+        if (listEl && products.length > 0) {
+            listEl.innerHTML = products.map(p => `
+                <div class="admin-inventory-item">
+                    <div class="admin-item-left">
+                        <img src="${p.image}" alt="${p.name}" class="admin-item-thumb">
+                        <div>
+                            <div class="admin-item-title">${p.name}</div>
+                            <div class="admin-item-category">${p.category ? p.category.toUpperCase() : 'FINE JEWELRY'}</div>
+                        </div>
+                    </div>
+                    <div class="admin-item-right">
+                        <div class="admin-item-price">₹${p.price ? p.price.toLocaleString('en-IN') : '0'}</div>
+                        <span class="admin-item-badge">● LIVE</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    };
 
     const updateDashboardDetails = () => {
         const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
@@ -1508,7 +1561,6 @@ function initializeAuth() {
         if (!welcomeBadge && accountBtn) {
             welcomeBadge = document.createElement('span');
             welcomeBadge.id = 'header-welcome-badge';
-            welcomeBadge.className = 'header-user-welcome';
             accountBtn.parentNode.insertBefore(welcomeBadge, accountBtn);
             welcomeBadge.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1516,20 +1568,35 @@ function initializeAuth() {
             });
         }
 
+        const authContainer = document.querySelector('.auth-container');
+
         if (user) {
             localStorage.setItem('pavelia_user_profile', JSON.stringify(user));
-            if (welcomeBadge) {
-                welcomeBadge.textContent = `Client: ${user.firstName}`;
-                welcomeBadge.style.display = 'inline-block';
+            if (isAdmin(user)) {
+                if (authContainer) authContainer.classList.add('admin-mode');
+                if (welcomeBadge) {
+                    welcomeBadge.className = 'header-admin-badge';
+                    welcomeBadge.innerHTML = `✦ MAISON ADMIN`;
+                    welcomeBadge.style.display = 'inline-flex';
+                }
+                updateAdminDashboardDetails();
+            } else {
+                if (authContainer) authContainer.classList.remove('admin-mode');
+                if (welcomeBadge) {
+                    welcomeBadge.className = 'header-user-welcome';
+                    welcomeBadge.textContent = `Client: ${user.firstName}`;
+                    welcomeBadge.style.display = 'inline-block';
+                }
+                if (dashboardWelcome) dashboardWelcome.textContent = `Welcome back, ${user.firstName} ${user.lastName || ''}`;
+                if (dashboardEmailDisplay) dashboardEmailDisplay.textContent = user.email;
+                updateDashboardDetails();
             }
             if (accountBtn) accountBtn.style.color = 'var(--color-gold)';
-            if (dashboardWelcome) dashboardWelcome.textContent = `Welcome back, ${user.firstName} ${user.lastName || ''}`;
-            if (dashboardEmailDisplay) dashboardEmailDisplay.textContent = user.email;
-            updateDashboardDetails();
         } else {
             userToken = null;
             localStorage.removeItem('pavelia_token');
             localStorage.removeItem('pavelia_user_profile');
+            if (authContainer) authContainer.classList.remove('admin-mode');
             if (welcomeBadge) welcomeBadge.style.display = 'none';
             if (accountBtn) accountBtn.style.color = '';
         }
@@ -1556,7 +1623,9 @@ function initializeAuth() {
                 const data = await res.json();
                 if (data.user) {
                     updateHeaderAuthState(data.user);
-                    loadCloudCart();
+                    if (!isAdmin(data.user)) {
+                        loadCloudCart();
+                    }
                 }
             }
         } catch (err) {
@@ -1639,7 +1708,7 @@ function initializeAuth() {
 
             try {
                 let registrationSuccess = false;
-                let registeredUser = { firstName, lastName, email };
+                let registeredUser = { firstName, lastName, email, role: 'customer' };
 
                 try {
                     const res = await fetch('/api/auth/register', {
@@ -1657,13 +1726,13 @@ function initializeAuth() {
                     }
                 } catch (fetchErr) {
                     // Client fallback registration
-                    saveLocalUser({ firstName, lastName, email, password });
+                    saveLocalUser({ firstName, lastName, email, password, role: 'customer' });
                     registrationSuccess = true;
                 }
 
                 if (registrationSuccess) {
                     // Auto-login user for seamless luxury experience
-                    saveLocalUser({ firstName, lastName, email, password });
+                    saveLocalUser({ firstName, lastName, email, password, role: 'customer' });
                     const simulatedToken = 'pvl_' + btoa(JSON.stringify({ email, firstName, time: Date.now() }));
                     userToken = simulatedToken;
                     localStorage.setItem('pavelia_token', userToken);
@@ -1723,40 +1792,47 @@ function initializeAuth() {
                 let authUser = null;
                 let token = null;
 
-                try {
-                    const res = await fetch('/api/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
-                    const data = await res.json();
+                // Dedicated local check for master admin
+                if (email === 'admin@pavelia.com' && password === 'admin123') {
+                    authenticated = true;
+                    token = 'pvl_admin_' + Date.now();
+                    authUser = { firstName: 'Maison', lastName: 'Owner', email: 'admin@pavelia.com', role: 'admin' };
+                } else {
+                    try {
+                        const res = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        const data = await res.json();
 
-                    if (res.ok && data.token) {
-                        authenticated = true;
-                        token = data.token;
-                        authUser = data.user;
-                    } else {
-                        // Check local client fallback
+                        if (res.ok && data.token) {
+                            authenticated = true;
+                            token = data.token;
+                            authUser = data.user;
+                        } else {
+                            // Check local client fallback
+                            const localUsers = getLocalUsers();
+                            const matched = localUsers.find(u => u.email === email && u.password === password);
+                            if (matched) {
+                                authenticated = true;
+                                token = 'pvl_' + btoa(JSON.stringify({ email: matched.email, firstName: matched.firstName, time: Date.now() }));
+                                authUser = { firstName: matched.firstName, lastName: matched.lastName, email: matched.email, role: matched.role || 'customer' };
+                            } else {
+                                if (signinError) signinError.textContent = data.error || 'Invalid credentials. Please verify your email and password.';
+                            }
+                        }
+                    } catch (netErr) {
+                        // Offline / Network fallback
                         const localUsers = getLocalUsers();
                         const matched = localUsers.find(u => u.email === email && u.password === password);
                         if (matched) {
                             authenticated = true;
                             token = 'pvl_' + btoa(JSON.stringify({ email: matched.email, firstName: matched.firstName, time: Date.now() }));
-                            authUser = { firstName: matched.firstName, lastName: matched.lastName, email: matched.email };
+                            authUser = { firstName: matched.firstName, lastName: matched.lastName, email: matched.email, role: matched.role || 'customer' };
                         } else {
-                            if (signinError) signinError.textContent = data.error || 'Invalid credentials. Please verify your email and password.';
+                            if (signinError) signinError.textContent = 'Invalid credentials or connection issue.';
                         }
-                    }
-                } catch (netErr) {
-                    // Offline / Network fallback
-                    const localUsers = getLocalUsers();
-                    const matched = localUsers.find(u => u.email === email && u.password === password);
-                    if (matched) {
-                        authenticated = true;
-                        token = 'pvl_' + btoa(JSON.stringify({ email: matched.email, firstName: matched.firstName, time: Date.now() }));
-                        authUser = { firstName: matched.firstName, lastName: matched.lastName, email: matched.email };
-                    } else {
-                        if (signinError) signinError.textContent = 'Invalid credentials or connection issue.';
                     }
                 }
 
@@ -1764,15 +1840,23 @@ function initializeAuth() {
                     userToken = token;
                     localStorage.setItem('pavelia_token', userToken);
                     updateHeaderAuthState(authUser);
-                    showAuthToast(`✦ Signed in as ${authUser.firstName}. Welcome back.`);
+
+                    if (isAdmin(authUser)) {
+                        showAuthToast(`✦ Welcome to Executive Maison Suite, Owner.`);
+                    } else {
+                        showAuthToast(`✦ Signed in as ${authUser.firstName}. Welcome back.`);
+                    }
+
                     signinForm.reset();
                     closeAuthModal();
 
-                    const localCart = JSON.parse(localStorage.getItem('pavelia_cart')) || [];
-                    if (localCart.length > 0) {
-                        await window.syncCartToCloud(localCart);
+                    if (!isAdmin(authUser)) {
+                        const localCart = JSON.parse(localStorage.getItem('pavelia_cart')) || [];
+                        if (localCart.length > 0) {
+                            await window.syncCartToCloud(localCart);
+                        }
+                        loadCloudCart();
                     }
-                    loadCloudCart();
                 }
             } catch (err) {
                 if (signinError) signinError.textContent = 'Authentication error. Please try again.';
@@ -1786,7 +1870,7 @@ function initializeAuth() {
     }
 
     // -------------------------------------------------------------
-    // SECURE LOGOUT
+    // SECURE LOGOUT (CUSTOMER & ADMIN)
     // -------------------------------------------------------------
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
@@ -1794,6 +1878,24 @@ function initializeAuth() {
             updateHeaderAuthState(null);
             showAuthToast('✦ You have been signed out securely.');
             closeAuthModal();
+        });
+    }
+
+    if (btnAdminLogout) {
+        btnAdminLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            updateHeaderAuthState(null);
+            showAuthToast('✦ Maison Admin session closed securely.');
+            closeAuthModal();
+        });
+    }
+
+    if (btnAdminViewStore) {
+        btnAdminViewStore.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeAuthModal();
+            const showroom = document.getElementById('showroom');
+            if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
         });
     }
 

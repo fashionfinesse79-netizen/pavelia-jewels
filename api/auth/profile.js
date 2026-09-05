@@ -40,7 +40,8 @@ module.exports = async (req, res) => {
                 user: {
                     firstName: decoded.firstName,
                     lastName: decoded.lastName || '',
-                    email: decoded.email
+                    email: decoded.email,
+                    role: decoded.role || (decoded.email === 'admin@pavelia.com' ? 'admin' : 'customer')
                 }
             });
         }
