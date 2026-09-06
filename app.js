@@ -2029,10 +2029,26 @@ function initializeAdminDashboard() {
     const btnPreviewStorefront = document.getElementById('btn-admin-preview-storefront');
     const btnTopLogout = document.getElementById('btn-admin-top-logout');
     
+    // Tab Navigation Elements
+    const adminTabBtnProducts = document.getElementById('admin-tab-btn-products');
+    const adminTabBtnOrders = document.getElementById('admin-tab-btn-orders');
+    const adminTabProdCount = document.getElementById('admin-tab-prod-count');
+    const adminTabOrdersCount = document.getElementById('admin-tab-orders-count');
+    const adminPanelProducts = document.getElementById('admin-panel-products');
+    const adminPanelOrders = document.getElementById('admin-panel-orders');
+    
+    // Products Table Elements
     const adminProductSearch = document.getElementById('admin-product-search');
     const adminCategoryFilter = document.getElementById('admin-category-filter');
     const adminProductsTbody = document.getElementById('admin-products-tbody');
-    const adminTabCount = document.getElementById('admin-tab-prod-count');
+    
+    // Orders Table & Stats Elements
+    const adminOrdersSearch = document.getElementById('admin-orders-search');
+    const adminOrdersFilter = document.getElementById('admin-orders-filter');
+    const adminOrdersTbody = document.getElementById('admin-orders-tbody');
+    const adminStatOrdersTotal = document.getElementById('admin-stat-orders-total');
+    const adminStatOrdersRev = document.getElementById('admin-stat-orders-rev');
+    const adminStatOrdersPending = document.getElementById('admin-stat-orders-pending');
     
     // Product Modal Elements
     const productModal = document.getElementById('admin-product-modal');
@@ -2053,6 +2069,25 @@ function initializeAdminDashboard() {
     const formProductImage = document.getElementById('form-product-image');
     const formProductImage2 = document.getElementById('form-product-image2');
 
+    // Order Dossier Modal Elements
+    const orderModal = document.getElementById('admin-order-modal');
+    const orderModalCloseBtn = document.getElementById('admin-order-modal-close');
+    const dossierOrderId = document.getElementById('dossier-order-id');
+    const dossierClientName = document.getElementById('dossier-client-name');
+    const dossierClientPhone = document.getElementById('dossier-client-phone');
+    const dossierClientEmail = document.getElementById('dossier-client-email');
+    const dossierClientType = document.getElementById('dossier-client-type');
+    const dossierClientAddress = document.getElementById('dossier-client-address');
+    const dossierLinkWa = document.getElementById('dossier-link-wa');
+    const dossierLinkPhone = document.getElementById('dossier-link-phone');
+    const dossierLinkEmail = document.getElementById('dossier-link-email');
+    const dossierOrderDate = document.getElementById('dossier-order-date');
+    const dossierOrderPayment = document.getElementById('dossier-order-payment');
+    const dossierOrderTotal = document.getElementById('dossier-order-total');
+    const dossierItemsList = document.getElementById('dossier-items-list');
+    const dossierStatusForm = document.getElementById('dossier-status-form');
+    const dossierStatusSelect = document.getElementById('dossier-status-select');
+
     window.openAdminFullview = () => {
         if (adminDashboard) {
             adminDashboard.classList.remove('hidden');
@@ -2062,6 +2097,7 @@ function initializeAdminDashboard() {
             floatingReturnBtn.classList.add('hidden');
         }
         renderAdminProductsTable();
+        renderAdminOrdersTable();
     };
 
     window.closeAdminFullview = (showFloatingReturn = false) => {
@@ -2079,12 +2115,37 @@ function initializeAdminDashboard() {
         }
     };
 
+    // -------------------------------------------------------------
+    // ADMIN TAB SWITCHING
+    // -------------------------------------------------------------
+    function switchAdminTab(targetTab) {
+        if (targetTab === 'products') {
+            if (adminTabBtnProducts) adminTabBtnProducts.classList.add('active');
+            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
+            if (adminPanelProducts) adminPanelProducts.classList.remove('hidden');
+            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
+            renderAdminProductsTable();
+        } else if (targetTab === 'orders') {
+            if (adminTabBtnOrders) adminTabBtnOrders.classList.add('active');
+            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
+            if (adminPanelOrders) adminPanelOrders.classList.remove('hidden');
+            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
+            renderAdminOrdersTable();
+        }
+    }
+
+    if (adminTabBtnProducts) adminTabBtnProducts.addEventListener('click', () => switchAdminTab('products'));
+    if (adminTabBtnOrders) adminTabBtnOrders.addEventListener('click', () => switchAdminTab('orders'));
+
+    // -------------------------------------------------------------
+    // PRODUCTS TABLE RENDERING
+    // -------------------------------------------------------------
     function renderAdminProductsTable() {
         if (!adminProductsTbody) return;
 
         const catalog = getPaveliaCatalog();
-        if (adminTabCount) {
-            adminTabCount.textContent = catalog.length;
+        if (adminTabProdCount) {
+            adminTabProdCount.textContent = catalog.length;
         }
 
         const searchTerm = (adminProductSearch ? adminProductSearch.value : '').trim().toLowerCase();
@@ -2258,25 +2319,33 @@ function initializeAdminDashboard() {
         const priceNum = formProductPrice ? parseInt(formProductPrice.value, 10) : 0;
         const inventory = formProductInventory ? formProductInventory.value.trim() : '8 pcs';
         const badgeRaw = formProductBadge ? formProductBadge.value.trim() : '';
+        const badgeFormatted = badgeRaw ? (badgeRaw.startsWith('✦') ? badgeRaw : `✦ ${badgeRaw}`) : '✦ HAUTE ATELIER';
         const status = formProductStatus ? formProductStatus.value : 'IN STOCK';
         const specs = formProductSpecs ? formProductSpecs.value.trim() : '';
         const image = formProductImage ? formProductImage.value.trim() : '';
         const image2 = formProductImage2 ? formProductImage2.value.trim() : '';
 
+        const images = [image, image2].filter(Boolean);
+
         if (!name || !image || isNaN(priceNum) || priceNum <= 0) {
-            alert('Please provide a valid Creation Title, Price, and Primary Image URL.');
+            alert('Please provide a valid creation title, primary image URL, and price.');
             return;
         }
 
-        const images = image2 ? [image, image2] : [image];
-        const badgeFormatted = badgeRaw ? (badgeRaw.startsWith('✦') ? badgeRaw : `✦ ${badgeRaw}`) : '✦ SIGNATURE PIECE';
         const priceFormatted = `₹${priceNum.toLocaleString('en-IN')}`;
-        const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+        const categoryLabels = {
+            rings: 'Royal Solitaire',
+            earrings: 'Ear Drops & Studs',
+            necklaces: 'Chokers & Cascades',
+            bracelets: 'Tennis & Bangles',
+            pendants: 'Royal Pendants'
+        };
+        const categoryLabel = categoryLabels[category] || 'Fine Jewelry';
 
         let catalog = getPaveliaCatalog();
 
         if (id) {
-            // Edit existing product
+            // Edit existing creation
             const index = catalog.findIndex(p => p.id === id);
             if (index !== -1) {
                 catalog[index] = {
@@ -2290,7 +2359,7 @@ function initializeAdminDashboard() {
                     status,
                     badge: badgeFormatted,
                     specs: specs || catalog[index].specs || 'Master Cut • 18K Solid Gold / Platinum',
-                    image,
+                    image: image,
                     images
                 };
             }
@@ -2308,7 +2377,7 @@ function initializeAdminDashboard() {
                 status,
                 badge: badgeFormatted,
                 specs: specs || 'Handcrafted Fine Atelier Creation',
-                image,
+                image: image,
                 images,
                 desc: `${name} is an exquisite high jewelry creation, hand-burnished by master lapidaries to evoke timeless poise.`,
                 options: {
@@ -2349,6 +2418,372 @@ function initializeAdminDashboard() {
             showToastFn(`✦ "${product.name}" has been retired from the live showroom.`);
         }
     }
+
+    // -------------------------------------------------------------
+    // CLIENT ORDERS TABLE & CUSTOMER DETAILS RENDERING
+    // -------------------------------------------------------------
+    const DEFAULT_SEED_ORDERS = [
+        {
+            orderId: 'PVL-2026-94812',
+            orderDate: '06 September 2026',
+            timestamp: new Date().toISOString(),
+            items: [
+                {
+                    id: 'ring-1',
+                    name: 'Amour Solitaire Ring',
+                    price: '₹85,000',
+                    priceNum: 85000,
+                    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=700&auto=format&fit=crop',
+                    variantMetal: '18K Yellow Gold Vermeil',
+                    variantSize: '7',
+                    quantity: 1
+                },
+                {
+                    id: 'earring-1',
+                    name: 'Orion Diamond Studs',
+                    price: '₹62,000',
+                    priceNum: 62000,
+                    image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=700&auto=format&fit=crop',
+                    variantMetal: '950 Solid Platinum',
+                    variantSize: '1.00 Carat Pair',
+                    quantity: 1
+                }
+            ],
+            total: 147000,
+            paymentMethod: 'Online Payment (Razorpay Vault - 100% Encrypted)',
+            address: {
+                fullName: 'Ananya Sharma',
+                phone: '9876543210',
+                email: 'ananya.sharma@example.com',
+                street: 'Penthouse 4B, Imperial Towers, MG Road',
+                landmark: 'Near Royal Opera House',
+                pincode: '400001',
+                city: 'Mumbai',
+                state: 'Maharashtra',
+                addressType: 'Residence'
+            },
+            status: 'Confirmed • In Bespoke Atelier Preparation'
+        },
+        {
+            orderId: 'PVL-2026-81340',
+            orderDate: '05 September 2026',
+            timestamp: new Date(Date.now() - 86400000).toISOString(),
+            items: [
+                {
+                    id: 'necklace-1',
+                    name: 'Aura Solitaire Pendant',
+                    price: '₹95,000',
+                    priceNum: 95000,
+                    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=700&auto=format&fit=crop',
+                    variantMetal: '18K Yellow Gold Vermeil',
+                    variantSize: '18 Inches',
+                    quantity: 1
+                }
+            ],
+            total: 95000,
+            paymentMethod: 'Cash / Card on Delivery (Armored Transit Verification)',
+            address: {
+                fullName: 'Rohan Singhania',
+                phone: '9988776655',
+                email: 'rohan.singhania@example.com',
+                street: 'Villa 12, Golf Links Enclave',
+                landmark: 'Adjacent to Embassy Circle',
+                pincode: '110003',
+                city: 'New Delhi',
+                state: 'Delhi',
+                addressType: 'Office'
+            },
+            status: 'Dispatched • In Insured Armored Transit'
+        }
+    ];
+
+    function getStoredOrders() {
+        try {
+            const stored = JSON.parse(localStorage.getItem('pavelia_orders'));
+            if (Array.isArray(stored) && stored.length > 0) {
+                return stored;
+            }
+            localStorage.setItem('pavelia_orders', JSON.stringify(DEFAULT_SEED_ORDERS));
+            return DEFAULT_SEED_ORDERS;
+        } catch (e) {
+            return DEFAULT_SEED_ORDERS;
+        }
+    }
+
+    function renderAdminOrdersTable() {
+        if (!adminOrdersTbody) return;
+
+        const orders = getStoredOrders();
+        if (adminTabOrdersCount) {
+            adminTabOrdersCount.textContent = orders.length;
+        }
+
+        // Calculate Overview Statistics
+        const totalCount = orders.length;
+        const totalRevenue = orders.reduce((acc, it) => acc + (it.total || 0), 0);
+        const pendingCount = orders.filter(it => !it.status || it.status.includes('Preparation') || it.status.includes('Production') || it.status.includes('Confirmed')).length;
+
+        if (adminStatOrdersTotal) adminStatOrdersTotal.textContent = totalCount;
+        if (adminStatOrdersRev) adminStatOrdersRev.textContent = `₹${totalRevenue.toLocaleString('en-IN')}`;
+        if (adminStatOrdersPending) adminStatOrdersPending.textContent = pendingCount;
+
+        const searchTerm = (adminOrdersSearch ? adminOrdersSearch.value : '').trim().toLowerCase();
+        const filterVal = (adminOrdersFilter ? adminOrdersFilter.value : 'all').toLowerCase();
+
+        let filtered = orders.filter(order => {
+            // Status/Payment filter
+            let matchesFilter = true;
+            const statusLower = (order.status || '').toLowerCase();
+            const payLower = (order.paymentMethod || '').toLowerCase();
+
+            if (filterVal === 'production') {
+                matchesFilter = statusLower.includes('preparation') || statusLower.includes('production') || statusLower.includes('confirmed');
+            } else if (filterVal === 'dispatched') {
+                matchesFilter = statusLower.includes('dispatched') || statusLower.includes('transit');
+            } else if (filterVal === 'delivered') {
+                matchesFilter = statusLower.includes('delivered');
+            } else if (filterVal === 'cod') {
+                matchesFilter = payLower.includes('cash') || payLower.includes('cod') || payLower.includes('delivery');
+            } else if (filterVal === 'online') {
+                matchesFilter = payLower.includes('online') || payLower.includes('razorpay');
+            }
+
+            // Search query filter
+            const addr = order.address || {};
+            const items = order.items || [];
+            const itemsNames = items.map(i => i.name || '').join(' ').toLowerCase();
+
+            const matchesSearch = !searchTerm ||
+                (order.orderId && order.orderId.toLowerCase().includes(searchTerm)) ||
+                (addr.fullName && addr.fullName.toLowerCase().includes(searchTerm)) ||
+                (addr.phone && addr.phone.toLowerCase().includes(searchTerm)) ||
+                (addr.email && addr.email.toLowerCase().includes(searchTerm)) ||
+                (addr.city && addr.city.toLowerCase().includes(searchTerm)) ||
+                itemsNames.includes(searchTerm);
+
+            return matchesFilter && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+            adminOrdersTbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 48px 20px; color: var(--color-text-subtle);">
+                        <div style="font-size: 1.1rem; color: var(--color-gold-light); margin-bottom: 6px; font-family: var(--font-heading);">No Client Orders Found</div>
+                        <div style="font-size: 0.76rem; color: #888888;">When customers purchase creations via the "BUY NOW" flow, complete client profiles and order records will appear here live.</div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        adminOrdersTbody.innerHTML = filtered.map(order => {
+            const addr = order.address || {};
+            const items = order.items || [];
+            const clientName = addr.fullName || 'Esteemed Patron';
+            const clientPhone = addr.phone || '-';
+            const clientEmail = addr.email || '-';
+            const locationType = addr.addressType || 'Home';
+            const cityState = `${addr.city || 'Destination'}, ${addr.state || ''}`;
+            const fullDest = `${addr.street || ''}${addr.landmark ? ', ' + addr.landmark : ''}, ${cityState} - ${addr.pincode || ''}`;
+            const totalFormatted = `₹${(order.total || 0).toLocaleString('en-IN')}`;
+            const isCod = (order.paymentMethod || '').toLowerCase().includes('cash') || (order.paymentMethod || '').toLowerCase().includes('cod');
+            const paymentTag = isCod ? 'COD (TRANSIT)' : 'ONLINE (RAZORPAY)';
+            const orderDateText = order.orderDate || new Date(order.timestamp || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            const statusVal = order.status || 'Confirmed • In Bespoke Atelier Preparation';
+
+            return `
+                <tr data-order-id="${order.orderId}">
+                    <td class="td-order-id">
+                        <div class="admin-order-id-cell">
+                            <span class="admin-order-id-val">${order.orderId}</span>
+                            <span class="admin-order-date-val">${orderDateText}</span>
+                        </div>
+                    </td>
+                    <td class="td-customer">
+                        <div class="admin-customer-cell">
+                            <div class="admin-cust-name-row">
+                                <span class="admin-cust-name">${clientName}</span>
+                                <span class="admin-cust-type-tag">${locationType.toUpperCase()}</span>
+                            </div>
+                            <div class="admin-cust-contact">
+                                <span>📞 +91 ${clientPhone}</span>
+                                <span>✉ ${clientEmail}</span>
+                            </div>
+                            <div class="admin-cust-location" title="${fullDest}">📍 ${fullDest}</div>
+                        </div>
+                    </td>
+                    <td class="td-order-items">
+                        <div class="admin-order-items-preview">
+                            ${items.slice(0, 2).map(item => `
+                                <div class="admin-mini-item-row">
+                                    <img src="${item.image || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=100'}" alt="${item.name}" class="admin-mini-item-img">
+                                    <div class="admin-mini-item-info">
+                                        <div style="font-weight: 500;">${item.name}</div>
+                                        <div class="item-variant-text">${[item.variantMetal, item.variantSize && item.variantSize !== 'Standard' ? `Size ${item.variantSize}` : ''].filter(Boolean).join(' • ')} (Qty: ${item.quantity || 1})</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${items.length > 2 ? `<div style="font-size: 0.65rem; color: var(--color-gold); font-style: italic;">+ ${items.length - 2} more creation(s)...</div>` : ''}
+                        </div>
+                    </td>
+                    <td class="td-order-total">
+                        <span class="admin-price-text">${totalFormatted}</span>
+                    </td>
+                    <td class="td-order-payment">
+                        <span class="admin-payment-pill ${isCod ? 'cod' : ''}">${paymentTag}</span>
+                    </td>
+                    <td class="td-order-status">
+                        <select class="admin-order-status-select" data-order-id="${order.orderId}">
+                            <option value="Confirmed • In Bespoke Atelier Preparation" ${statusVal.includes('Preparation') || statusVal.includes('Confirmed') ? 'selected' : ''}>In Atelier Preparation</option>
+                            <option value="Crafted • Certified & Lapidary Sealed" ${statusVal.includes('Crafted') ? 'selected' : ''}>Crafted & Sealed</option>
+                            <option value="Dispatched • In Insured Armored Transit" ${statusVal.includes('Dispatched') || statusVal.includes('Transit') ? 'selected' : ''}>Armored Transit</option>
+                            <option value="Delivered & Handed Over" ${statusVal.includes('Delivered') ? 'selected' : ''}>Delivered</option>
+                            <option value="Commission Cancelled" ${statusVal.includes('Cancelled') ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </td>
+                    <td class="td-actions">
+                        <div class="admin-action-btns">
+                            <button type="button" class="btn-table-action btn-dossier" data-order-id="${order.orderId}" title="Inspect Full Customer Dossier">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </button>
+                            <a href="https://wa.me/91${clientPhone}?text=${encodeURIComponent(`Hello ${clientName}, this is Pavelia Haute Joaillerie Concierge regarding your Order ${order.orderId}.`)}" target="_blank" class="btn-table-action btn-wa-admin" title="Message Customer on WhatsApp">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Bind table row buttons & status dropdowns
+        adminOrdersTbody.querySelectorAll('.btn-dossier').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const orderId = btn.dataset.orderId;
+                openAdminOrderModal(orderId);
+            });
+        });
+
+        adminOrdersTbody.querySelectorAll('.admin-order-status-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const orderId = select.dataset.orderId;
+                const newStatus = e.target.value;
+                updateOrderStatus(orderId, newStatus);
+            });
+        });
+    }
+
+    // -------------------------------------------------------------
+    // CUSTOMER & ORDER DOSSIER MODAL LOGIC
+    // -------------------------------------------------------------
+    function openAdminOrderModal(orderId) {
+        if (!orderModal) return;
+        const orders = getStoredOrders();
+        const order = orders.find(o => o.orderId === orderId);
+        if (!order) return;
+
+        const addr = order.address || {};
+        const items = order.items || [];
+        const clientName = addr.fullName || 'Esteemed Patron';
+        const clientPhone = addr.phone || '-';
+        const clientEmail = addr.email || '-';
+        const locationType = addr.addressType || 'Home';
+        const fullDest = `${clientName}, ${addr.street || ''}${addr.landmark ? ', ' + addr.landmark : ''}, ${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}`;
+        const totalFormatted = `₹${(order.total || 0).toLocaleString('en-IN')}`;
+        const orderDateText = order.orderDate || new Date(order.timestamp || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        if (dossierOrderId) dossierOrderId.textContent = order.orderId;
+        if (dossierClientName) dossierClientName.textContent = clientName;
+        if (dossierClientPhone) dossierClientPhone.textContent = `+91 ${clientPhone}`;
+        if (dossierClientEmail) dossierClientEmail.textContent = clientEmail;
+        if (dossierClientType) dossierClientType.textContent = `${locationType} Destination`;
+        if (dossierClientAddress) dossierClientAddress.textContent = fullDest;
+
+        if (dossierLinkWa) {
+            dossierLinkWa.href = `https://wa.me/91${clientPhone}?text=${encodeURIComponent(`Hello ${clientName}, this is Pavelia Haute Joaillerie Concierge regarding your Order ${order.orderId}.`)}`;
+        }
+        if (dossierLinkPhone) {
+            dossierLinkPhone.href = `tel:+91${clientPhone}`;
+        }
+        if (dossierLinkEmail) {
+            dossierLinkEmail.href = `mailto:${clientEmail}?subject=${encodeURIComponent(`Pavelia Jewels Commission Update - ${order.orderId}`)}`;
+        }
+
+        if (dossierOrderDate) dossierOrderDate.textContent = orderDateText;
+        if (dossierOrderPayment) dossierOrderPayment.textContent = order.paymentMethod || 'Paid';
+        if (dossierOrderTotal) dossierOrderTotal.textContent = totalFormatted;
+
+        if (dossierItemsList) {
+            dossierItemsList.innerHTML = items.map(item => `
+                <div class="dossier-item-card">
+                    <img src="${item.image || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=200'}" alt="${item.name}" class="dossier-item-thumb">
+                    <div class="dossier-item-details">
+                        <div class="dossier-item-name">${item.name}</div>
+                        <div class="dossier-item-specs">${[item.variantMetal, item.variantSize && item.variantSize !== 'Standard' ? `Size ${item.variantSize}` : ''].filter(Boolean).join(' • ')}</div>
+                        <div class="dossier-item-qty">Quantity: ${item.quantity || 1}</div>
+                    </div>
+                    <div class="dossier-item-price">₹${((item.priceNum || parseInt(String(item.price).replace(/[^\d]/g, ''), 10) || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</div>
+                </div>
+            `).join('');
+        }
+
+        if (dossierStatusSelect) {
+            dossierStatusSelect.value = order.status || 'Confirmed • In Bespoke Atelier Preparation';
+        }
+        if (dossierStatusForm) {
+            dossierStatusForm.dataset.orderId = order.orderId;
+        }
+
+        orderModal.classList.remove('hidden');
+    }
+
+    function closeAdminOrderModal() {
+        if (orderModal) orderModal.classList.add('hidden');
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+        let orders = getStoredOrders();
+        const idx = orders.findIndex(o => o.orderId === orderId);
+        if (idx !== -1) {
+            orders[idx].status = newStatus;
+            localStorage.setItem('pavelia_orders', JSON.stringify(orders));
+            renderAdminOrdersTable();
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Commission ${orderId} updated to: ${newStatus}`);
+            // Fire event so customer order history also updates
+            window.dispatchEvent(new CustomEvent('pavelia_order_status_updated', { detail: { orderId, status: newStatus } }));
+        }
+    }
+
+    if (dossierStatusForm) {
+        dossierStatusForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const orderId = dossierStatusForm.dataset.orderId;
+            const newStatus = dossierStatusSelect ? dossierStatusSelect.value : '';
+            if (orderId && newStatus) {
+                updateOrderStatus(orderId, newStatus);
+                closeAdminOrderModal();
+            }
+        });
+    }
+
+    if (orderModalCloseBtn) orderModalCloseBtn.addEventListener('click', closeAdminOrderModal);
+
+    // Auto-update orders if customer places an order live
+    window.addEventListener('pavelia_order_placed', () => {
+        renderAdminOrdersTable();
+    });
+
+    if (adminOrdersSearch) adminOrdersSearch.addEventListener('input', renderAdminOrdersTable);
+    if (adminOrdersFilter) adminOrdersFilter.addEventListener('change', renderAdminOrdersTable);
 
     // Event Listeners
     if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);

@@ -4122,15 +4122,497 @@ img {
     box-shadow: 0 8px 24px rgba(197, 168, 128, 0.4);
 }
 
+/* Admin Orders Panel & Stats Grid */
+.admin-tab-panel.hidden {
+    display: none !important;
+}
+
+.admin-orders-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-stat-card {
+    background: #141414;
+    border: 1px solid rgba(197, 168, 128, 0.25);
+    border-radius: 4px;
+    padding: 20px 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+
+.admin-stat-card:hover {
+    border-color: var(--color-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(197, 168, 128, 0.15);
+}
+
+.admin-stat-card .stat-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--color-text-subtle);
+}
+
+.admin-stat-card .stat-value {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    line-height: 1.1;
+}
+
+.admin-stat-card .stat-value.gold-text {
+    color: var(--color-gold);
+}
+
+.admin-stat-card .stat-sub {
+    font-size: 0.72rem;
+    color: #888888;
+}
+
+/* Orders Table Customizations */
+.admin-orders-table thead th.th-order-id { width: 14%; }
+.admin-orders-table thead th.th-customer { width: 28%; }
+.admin-orders-table thead th.th-order-items { width: 24%; }
+.admin-orders-table thead th.th-order-total { width: 10%; }
+.admin-orders-table thead th.th-order-payment { width: 10%; }
+.admin-orders-table thead th.th-order-status { width: 14%; }
+
+.admin-order-id-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.admin-order-id-val {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.84rem;
+    color: var(--color-gold);
+    letter-spacing: 0.08em;
+}
+
+.admin-order-date-val {
+    font-size: 0.68rem;
+    color: var(--color-text-subtle);
+}
+
+.admin-customer-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.admin-cust-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-cust-name {
+    font-weight: 600;
+    color: #FFFFFF;
+    font-size: 0.84rem;
+    font-family: var(--font-heading);
+    letter-spacing: 0.04em;
+}
+
+.admin-cust-type-tag {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: #1F1F1F;
+    color: var(--color-gold-light);
+    border: 1px solid rgba(197, 168, 128, 0.3);
+}
+
+.admin-cust-contact {
+    font-size: 0.72rem;
+    color: #C0B4A0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.admin-cust-location {
+    font-size: 0.7rem;
+    color: #8E8E8E;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+}
+
+.admin-order-items-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 260px;
+}
+
+.admin-mini-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-mini-item-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    object-fit: cover;
+    border: 1px solid rgba(197, 168, 128, 0.2);
+    flex-shrink: 0;
+    background: #0E0E0E;
+}
+
+.admin-mini-item-info {
+    font-size: 0.72rem;
+    color: #E0D5C1;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-mini-item-info .item-variant-text {
+    font-size: 0.64rem;
+    color: #8E8E8E;
+}
+
+.admin-payment-pill {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 4px 8px;
+    border-radius: 2px;
+    background: rgba(197, 168, 128, 0.12);
+    color: var(--color-gold-light);
+    border: 1px solid rgba(197, 168, 128, 0.3);
+}
+
+.admin-payment-pill.cod {
+    background: rgba(243, 156, 18, 0.12);
+    color: #F39C12;
+    border-color: rgba(243, 156, 18, 0.3);
+}
+
+.admin-order-status-select {
+    background: #181818;
+    color: var(--color-gold-light);
+    border: 1px solid rgba(197, 168, 128, 0.3);
+    border-radius: 2px;
+    padding: 6px 10px;
+    font-size: 0.68rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    outline: none;
+    max-width: 170px;
+}
+
+.btn-table-action.btn-dossier {
+    background: rgba(197, 168, 128, 0.15);
+    color: var(--color-gold);
+    border-color: rgba(197, 168, 128, 0.4);
+}
+
+.btn-table-action.btn-dossier:hover {
+    background: var(--color-gold);
+    color: #0A0A0A;
+}
+
+.btn-table-action.btn-wa-admin {
+    background: rgba(37, 211, 102, 0.12);
+    color: #25D366;
+    border-color: rgba(37, 211, 102, 0.3);
+}
+
+.btn-table-action.btn-wa-admin:hover {
+    background: #25D366;
+    color: #0A0A0A;
+}
+
+/* Detailed Customer Order Dossier Modal */
+.admin-order-dossier-card {
+    max-width: 780px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px 36px;
+    background: #121212;
+    border: 1px solid rgba(197, 168, 128, 0.35);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.admin-order-dossier-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dossier-kicker {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--color-gold);
+}
+
+.admin-order-dossier-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.dossier-section-card {
+    background: #181818;
+    border: 1px solid rgba(197, 168, 128, 0.2);
+    border-radius: 4px;
+    padding: 20px 24px;
+}
+
+.dossier-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-gold-light);
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(197, 168, 128, 0.15);
+    padding-bottom: 10px;
+}
+
+.dossier-section-heading svg {
+    width: 18px;
+    height: 18px;
+    color: var(--color-gold);
+}
+
+.dossier-client-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dossier-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dossier-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--color-text-subtle);
+    text-transform: uppercase;
+}
+
+.dossier-val-highlight {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+}
+
+.dossier-val {
+    font-size: 0.85rem;
+    color: #E0D5C1;
+}
+
+.dossier-address-box {
+    background: #0E0E0E;
+    border: 1px solid rgba(197, 168, 128, 0.25);
+    border-radius: 3px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+}
+
+.dossier-address-text {
+    font-size: 0.82rem;
+    color: #F0E8DA;
+    line-height: 1.6;
+    margin-top: 4px;
+}
+
+.dossier-contact-quicklinks {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-dossier-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #141414;
+    border: 1px solid rgba(197, 168, 128, 0.3);
+    color: var(--color-gold-light);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    padding: 8px 16px;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.btn-dossier-link svg {
+    width: 15px;
+    height: 15px;
+    color: var(--color-gold);
+}
+
+.btn-dossier-link:hover {
+    background: var(--color-gold);
+    color: #0A0A0A;
+}
+
+.btn-dossier-link:hover svg {
+    color: #0A0A0A;
+}
+
+.dossier-financial-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    background: #0E0E0E;
+    border: 1px solid rgba(197, 168, 128, 0.2);
+    border-radius: 3px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+}
+
+.fin-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fin-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--color-text-subtle);
+    text-transform: uppercase;
+}
+
+.fin-val {
+    font-size: 0.9rem;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-family: var(--font-heading);
+}
+
+.fin-val.gold-text {
+    color: var(--color-gold);
+}
+
+.dossier-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dossier-item-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #141414;
+    border: 1px solid rgba(197, 168, 128, 0.15);
+    border-radius: 3px;
+    padding: 12px 16px;
+}
+
+.dossier-item-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 2px;
+    object-fit: cover;
+    border: 1px solid rgba(197, 168, 128, 0.25);
+    background: #0E0E0E;
+    flex-shrink: 0;
+}
+
+.dossier-item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.dossier-item-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+}
+
+.dossier-item-specs {
+    font-size: 0.7rem;
+    color: var(--color-gold);
+    margin-top: 2px;
+}
+
+.dossier-item-qty {
+    font-size: 0.7rem;
+    color: #8E8E8E;
+    margin-top: 2px;
+}
+
+.dossier-item-price {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-gold-light);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.status-select-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-dossier-save-status {
+    background: var(--color-gold-gradient);
+    color: #0A0A0A;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    padding: 11px 22px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.btn-dossier-save-status:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(197, 168, 128, 0.4);
+}
+
 @media (max-width: 768px) {
-    .admin-top-banner {
-        padding: 24px 5%;
-    }
-    .form-row-grid {
+    .dossier-client-grid, .dossier-financial-row {
         grid-template-columns: 1fr;
     }
-    .admin-search-wrapper {
-        min-width: 100%;
+    .status-select-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
