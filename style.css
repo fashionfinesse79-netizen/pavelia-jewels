@@ -4616,6 +4616,150 @@ img {
     }
 }
 
+/* -------------------------------------------------------------
+   CUSTOMER PRIVATE VAULT ORDER CARD & DOSSIER LINK STYLES
+   ------------------------------------------------------------- */
+.customer-order-card {
+    background: #181818;
+    border: 1px solid rgba(197, 168, 128, 0.25);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.customer-order-card:hover {
+    border-color: rgba(197, 168, 128, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.customer-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.customer-order-id {
+    color: var(--color-gold);
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.customer-order-status-pill {
+    font-size: 0.65rem;
+    background: rgba(197, 168, 128, 0.12);
+    color: var(--color-gold-light);
+    padding: 3px 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(197, 168, 128, 0.35);
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+
+.customer-order-items-preview {
+    color: #E2D7C5;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.customer-order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(197, 168, 128, 0.12);
+    padding-top: 10px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.customer-order-meta {
+    font-size: 0.72rem;
+    color: #8E8E8E;
+}
+
+.customer-order-price {
+    color: #FFFFFF;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+.btn-customer-view-order {
+    background: rgba(197, 168, 128, 0.12);
+    color: var(--color-gold);
+    border: 1px solid rgba(197, 168, 128, 0.4);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 7px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-customer-view-order:hover {
+    background: var(--color-gold);
+    color: #0A0A0A;
+    border-color: var(--color-gold);
+    box-shadow: 0 4px 14px rgba(197, 168, 128, 0.3);
+    transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------------
+   PRINT MEDIA RULES FOR COMMISSION RECEIPTS & PACKING MANIFESTS
+   ------------------------------------------------------------- */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #admin-order-modal:not(.hidden),
+    #admin-order-modal:not(.hidden) *,
+    #customer-order-dossier-modal:not(.hidden),
+    #customer-order-dossier-modal:not(.hidden) * {
+        visibility: visible !important;
+    }
+    #admin-order-modal,
+    #customer-order-dossier-modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        display: block !important;
+    }
+    .admin-modal-card {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .dossier-section-card {
+        background: #F8F8F8 !important;
+        border: 1px solid #D0D0D0 !important;
+        color: #000000 !important;
+    }
+    .dossier-val-highlight, .dossier-val, .dossier-address-text, .dossier-item-name, .dossier-item-price, .total-val, .admin-modal-title {
+        color: #000000 !important;
+    }
+    .admin-modal-close, .btn-dossier-link, .btn-dossier-save-status, #cust-dossier-btn-print, #btn-admin-print-manifest, .dossier-status-update-card {
+        display: none !important;
+    }
+}
+
 /* =============================================================
    23. LUXURY E-COMMERCE CHECKOUT MODAL FLOW
    ============================================================= */

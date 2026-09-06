@@ -1984,6 +1984,17 @@ function initializeCheckoutFlow() {
     if (checkoutModalClose) checkoutModalClose.addEventListener('click', closeCheckoutModal);
     if (btnCheckoutClose) btnCheckoutClose.addEventListener('click', closeCheckoutModal);
 
+    const btnPlacedViewDossier = document.getElementById('btn-placed-view-dossier');
+    if (btnPlacedViewDossier) {
+        btnPlacedViewDossier.addEventListener('click', () => {
+            const orderId = placedOrderId ? placedOrderId.textContent.trim() : null;
+            if (orderId && typeof window.openCustomerOrderDossier === 'function') {
+                closeCheckoutModal();
+                window.openCustomerOrderDossier(orderId);
+            }
+        });
+    }
+
     if (btnCheckoutFinish) {
         btnCheckoutFinish.addEventListener('click', () => {
             closeCheckoutModal();
@@ -2777,6 +2788,19 @@ function initializeAdminDashboard() {
 
     if (orderModalCloseBtn) orderModalCloseBtn.addEventListener('click', closeAdminOrderModal);
 
+    const btnAdminPrintManifest = document.getElementById('btn-admin-print-manifest');
+    if (btnAdminPrintManifest) {
+        btnAdminPrintManifest.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
+    if (orderModal) {
+        orderModal.addEventListener('click', (e) => {
+            if (e.target === orderModal) closeAdminOrderModal();
+        });
+    }
+
     // Auto-update orders if customer places an order live
     window.addEventListener('pavelia_order_placed', () => {
         renderAdminOrdersTable();
@@ -3051,6 +3075,146 @@ function initializeAuth() {
         }
     };
 
+    // Customer Order Dossier Modal Elements
+    const custOrderDossierModal = document.getElementById('customer-order-dossier-modal');
+    const custOrderDossierClose = document.getElementById('cust-order-dossier-close');
+    const custDossierOrderId = document.getElementById('cust-dossier-order-id');
+    const custDossierStatusText = document.getElementById('cust-dossier-status-text');
+    const custDossierPaymentTag = document.getElementById('cust-dossier-payment-tag');
+    const custDossierClientName = document.getElementById('cust-dossier-client-name');
+    const custDossierClientPhone = document.getElementById('cust-dossier-client-phone');
+    const custDossierClientEmail = document.getElementById('cust-dossier-client-email');
+    const custDossierClientType = document.getElementById('cust-dossier-client-type');
+    const custDossierClientAddress = document.getElementById('cust-dossier-client-address');
+    const custDossierItemsList = document.getElementById('cust-dossier-items-list');
+    const custDossierSubtotalVal = document.getElementById('cust-dossier-subtotal-val');
+    const custDossierTotalVal = document.getElementById('cust-dossier-total-val');
+    const custDossierBtnWa = document.getElementById('cust-dossier-btn-wa');
+    const custDossierBtnPrint = document.getElementById('cust-dossier-btn-print');
+
+    const openCustomerOrderDossier = (orderId) => {
+        if (!custOrderDossierModal) return;
+        const allOrders = JSON.parse(localStorage.getItem('pavelia_orders') || '[]');
+        let order = allOrders.find(o => o.orderId === orderId);
+
+        if (!order) {
+            // Fallback seed order if not in local store
+            const seedOrders = [
+                {
+                    orderId: 'PVL-2026-94812',
+                    orderDate: '06 September 2026',
+                    items: [
+                        { name: 'Amour Solitaire Ring', variantMetal: '18K Yellow Gold Vermeil', variantSize: '7', quantity: 1, priceNum: 85000, image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=700' },
+                        { name: 'Orion Diamond Studs', variantMetal: '950 Solid Platinum', variantSize: '1.00 Carat Pair', quantity: 1, priceNum: 62000, image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=700' }
+                    ],
+                    total: 147000,
+                    paymentMethod: 'Online Payment (Razorpay Vault - 100% Encrypted)',
+                    address: {
+                        fullName: 'Ananya Sharma',
+                        phone: '9876543210',
+                        email: 'ananya.sharma@example.com',
+                        street: 'Penthouse 4B, Imperial Towers, MG Road',
+                        landmark: 'Near Royal Opera House',
+                        pincode: '400001',
+                        city: 'Mumbai',
+                        state: 'Maharashtra',
+                        addressType: 'Residence'
+                    },
+                    status: 'Confirmed • In Bespoke Atelier Preparation'
+                }
+            ];
+            order = seedOrders.find(o => o.orderId === orderId) || seedOrders[0];
+        }
+
+        if (!order) return;
+
+        const addr = order.address || {};
+        const items = order.items || [];
+        const clientName = addr.fullName || 'Esteemed Patron';
+        const clientPhone = addr.phone || '';
+        const clientEmail = addr.email || '';
+        const locType = addr.addressType || 'Residence';
+        const fullAddress = [addr.street, addr.landmark, addr.city, addr.state ? `${addr.state} - ${addr.pincode || ''}` : addr.pincode].filter(Boolean).join(', ');
+        const isCod = (order.paymentMethod || '').toLowerCase().includes('cash') || (order.paymentMethod || '').toLowerCase().includes('cod');
+        const payTag = isCod ? 'COD (ARMORED TRANSIT)' : 'ONLINE (RAZORPAY VAULT)';
+        const totalNum = order.total || items.reduce((acc, it) => acc + ((it.priceNum || 0) * (it.quantity || 1)), 0);
+
+        if (custDossierOrderId) custDossierOrderId.textContent = order.orderId;
+        if (custDossierStatusText) custDossierStatusText.textContent = order.status || 'Confirmed • In Bespoke Atelier Preparation';
+        if (custDossierPaymentTag) {
+            custDossierPaymentTag.textContent = payTag;
+            if (isCod) {
+                custDossierPaymentTag.classList.add('cod');
+            } else {
+                custDossierPaymentTag.classList.remove('cod');
+            }
+        }
+        if (custDossierClientName) custDossierClientName.textContent = clientName;
+        if (custDossierClientPhone) custDossierClientPhone.textContent = clientPhone ? `+91 ${clientPhone}` : '-';
+        if (custDossierClientEmail) custDossierClientEmail.textContent = clientEmail || '-';
+        if (custDossierClientType) custDossierClientType.textContent = `${locType} Destination`;
+        if (custDossierClientAddress) custDossierClientAddress.textContent = fullAddress || 'Destination address on file';
+
+        if (custDossierItemsList) {
+            custDossierItemsList.innerHTML = items.map(it => {
+                const img = it.image || (it.images && it.images[0]) || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=200';
+                const priceNum = it.priceNum || parseInt(String(it.price).replace(/[^\d]/g, ''), 10) || 0;
+                const qty = it.quantity || 1;
+                const lineTotal = priceNum * qty;
+                const specsText = [it.variantMetal, it.variantSize && it.variantSize !== 'Standard' ? `Size ${it.variantSize}` : ''].filter(Boolean).join(' • ') || 'Master Cut • Certified Atelier Creation';
+                return `
+                    <div class="dossier-item-card">
+                        <img src="${img}" alt="${it.name}" class="dossier-item-thumb">
+                        <div class="dossier-item-details">
+                            <div class="dossier-item-name">${it.name}</div>
+                            <div class="dossier-item-specs">${specsText}</div>
+                            <div class="dossier-item-qty">Quantity: ${qty}</div>
+                        </div>
+                        <div class="dossier-item-price">₹${lineTotal.toLocaleString('en-IN')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        if (custDossierSubtotalVal) custDossierSubtotalVal.textContent = `₹${totalNum.toLocaleString('en-IN')}`;
+        if (custDossierTotalVal) custDossierTotalVal.textContent = `₹${totalNum.toLocaleString('en-IN')}`;
+
+        if (custDossierBtnWa) {
+            const waMsg = `Hello Pavelia Luxury Atelier Concierge,\n\nI am inquiring about my Commission Dossier:\n✦ Order ID: ${order.orderId}\n✦ Patron: ${clientName}\n✦ Total Investment: ₹${totalNum.toLocaleString('en-IN')}\n✦ Status: ${order.status || 'In Atelier Preparation'}\n\nPlease share estimated transit schedule.`;
+            custDossierBtnWa.href = `https://wa.me/919999999999?text=${encodeURIComponent(waMsg)}`;
+        }
+
+        custOrderDossierModal.classList.remove('hidden');
+        document.body.classList.add('lock-scroll');
+    };
+
+    const closeCustomerOrderDossier = () => {
+        if (custOrderDossierModal) {
+            custOrderDossierModal.classList.add('hidden');
+            document.body.classList.remove('lock-scroll');
+        }
+    };
+
+    if (custOrderDossierClose) custOrderDossierClose.addEventListener('click', closeCustomerOrderDossier);
+    if (custOrderDossierModal) {
+        custOrderDossierModal.addEventListener('click', (e) => {
+            if (e.target === custOrderDossierModal) closeCustomerOrderDossier();
+        });
+    }
+    if (custDossierBtnPrint) {
+        custDossierBtnPrint.addEventListener('click', () => {
+            window.print();
+        });
+    }
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && custOrderDossierModal && !custOrderDossierModal.classList.contains('hidden')) {
+            closeCustomerOrderDossier();
+        }
+    });
+
+    window.openCustomerOrderDossier = openCustomerOrderDossier;
+    window.closeCustomerOrderDossier = closeCustomerOrderDossier;
+
     const updateDashboardDetails = () => {
         const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
         if (cachedUser) {
@@ -3065,22 +3229,43 @@ function initializeAuth() {
 
             if (placedOrders.length > 0) {
                 dashboardOrdersList.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                    <div style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
                         ${placedOrders.map(order => `
-                            <div style="background: #191919; border: 1px solid rgba(197,168,128,0.25); border-radius: 3px; padding: 12px 14px; font-size: 0.74rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                    <strong style="color: var(--color-gold); font-family: var(--font-heading); font-size: 0.78rem;">${order.orderId}</strong>
-                                    <span style="font-size: 0.65rem; background: rgba(197,168,128,0.12); color: #DFCA9B; padding: 2px 6px; border-radius: 2px; border: 1px solid rgba(197,168,128,0.3);">● ${order.status || 'IN PRODUCTION'}</span>
+                            <div class="customer-order-card">
+                                <div class="customer-order-header">
+                                    <strong class="customer-order-id">${order.orderId}</strong>
+                                    <span class="customer-order-status-pill">● ${(order.status || 'IN PRODUCTION').toUpperCase()}</span>
                                 </div>
-                                <div style="color: #E0D5C1; font-size: 0.72rem;">${order.items && order.items.length ? order.items.map(it => `${it.name} (x${it.quantity || 1})`).join(', ') : 'Fine Joaillerie Commission'}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; color: #8E8E8E; font-size: 0.68rem;">
-                                    <span>${order.orderDate || 'Recent'} • ${order.paymentMethod ? order.paymentMethod.split('(')[0] : 'Paid'}</span>
-                                    <strong style="color: #FFFFFF; font-size: 0.76rem;">₹${(order.total || 0).toLocaleString('en-IN')}</strong>
+                                <div class="customer-order-items-preview">
+                                    ${order.items && order.items.length 
+                                        ? order.items.map(it => `✦ ${it.name}${it.variantMetal ? ' (' + it.variantMetal + ')' : ''} &times; ${it.quantity || 1}`).join('<br>') 
+                                        : '✦ Fine Joaillerie Commission'}
+                                </div>
+                                <div class="customer-order-footer">
+                                    <div class="customer-order-meta">
+                                        <span>${order.orderDate || 'Recent'}</span>
+                                        <span>•</span>
+                                        <span>${order.paymentMethod ? (order.paymentMethod.toLowerCase().includes('cash') ? 'COD' : 'Online Paid') : 'Paid'}</span>
+                                        <span class="customer-order-price">₹${(order.total || 0).toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <button type="button" class="btn-customer-view-order" data-order-id="${order.orderId}">
+                                        <span>VIEW FULL ORDER</span>
+                                        <span>&rarr;</span>
+                                    </button>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                 `;
+
+                // Bind View Full Order click listeners
+                dashboardOrdersList.querySelectorAll('.btn-customer-view-order').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const orderId = btn.dataset.orderId;
+                        if (orderId) openCustomerOrderDossier(orderId);
+                    });
+                });
             } else if (cartItems.length > 0 || wishlistItems.length > 0) {
                 dashboardOrdersList.innerHTML = `
                     <div style="font-size:0.75rem; color:#E0D5C1; line-height:1.6; background:#1E1E1E; padding:12px 14px; border-radius:3px; border:1px solid rgba(197,168,128,0.2);">
@@ -3096,6 +3281,7 @@ function initializeAuth() {
     };
 
     window.addEventListener('pavelia_order_placed', updateDashboardDetails);
+    window.addEventListener('pavelia_order_status_updated', updateDashboardDetails);
 
     const updateHeaderAuthState = (user) => {
         let welcomeBadge = document.getElementById('header-welcome-badge');
