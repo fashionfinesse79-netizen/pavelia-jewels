@@ -1250,8 +1250,13 @@
                     </div>
 
                     <div class="dossier-address-box">
-                        <span class="dossier-label">✦ Complete Armored Delivery Address:</span>
-                        <p class="dossier-address-text" id="dossier-client-address">-</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="dossier-label" style="margin-bottom: 0;">✦ Complete Armored Delivery Address:</span>
+                            <button type="button" id="btn-admin-copy-address" style="background: rgba(197, 168, 128, 0.15); color: var(--color-gold); border: 1px solid rgba(197, 168, 128, 0.4); font-size: 0.68rem; font-weight: 600; padding: 4px 10px; border-radius: 2px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all var(--transition-fast);">
+                                <span>📋 COPY DESTINATION ADDRESS</span>
+                            </button>
+                        </div>
+                        <div class="dossier-address-text" id="dossier-client-address">-</div>
                     </div>
 
                     <div class="dossier-contact-quicklinks">

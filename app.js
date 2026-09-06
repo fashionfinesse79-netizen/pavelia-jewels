@@ -2594,8 +2594,12 @@ function initializeAdminDashboard() {
             const clientPhone = addr.phone || '-';
             const clientEmail = addr.email || '-';
             const locationType = addr.addressType || 'Home';
-            const cityState = `${addr.city || 'Destination'}, ${addr.state || ''}`;
-            const fullDest = `${addr.street || ''}${addr.landmark ? ', ' + addr.landmark : ''}, ${cityState} - ${addr.pincode || ''}`;
+            const street = addr.street || '';
+            const landmark = addr.landmark || '';
+            const city = addr.city || 'Destination';
+            const state = addr.state || '';
+            const pincode = addr.pincode || '';
+            const cityState = `${city}, ${state}`;
             const totalFormatted = `₹${(order.total || 0).toLocaleString('en-IN')}`;
             const isCod = (order.paymentMethod || '').toLowerCase().includes('cash') || (order.paymentMethod || '').toLowerCase().includes('cod');
             const paymentTag = isCod ? 'COD (TRANSIT)' : 'ONLINE (RAZORPAY)';
@@ -2604,24 +2608,33 @@ function initializeAdminDashboard() {
             const statusVal = order.status || 'Confirmed • In Bespoke Atelier Preparation';
 
             return `
-                <tr data-order-id="${order.orderId}">
+                <tr class="admin-order-row-clickable" data-order-id="${order.orderId}">
                     <td class="td-order-id">
                         <div class="admin-order-id-cell">
-                            <span class="admin-order-id-val">${order.orderId}</span>
+                            <span class="admin-order-id-val btn-dossier" data-order-id="${order.orderId}" title="Click to inspect order dossier">
+                                ✦ ${order.orderId}
+                            </span>
                             <span class="admin-order-date-val">${orderDateText}</span>
                         </div>
                     </td>
                     <td class="td-customer">
                         <div class="admin-customer-cell">
                             <div class="admin-cust-name-row">
-                                <span class="admin-cust-name">${clientName}</span>
+                                <span class="admin-cust-name btn-dossier" data-order-id="${order.orderId}" title="Click to view full customer dossier">${clientName}</span>
                                 <span class="admin-cust-type-tag">${locationType.toUpperCase()}</span>
                             </div>
                             <div class="admin-cust-contact">
-                                <span>📞 +91 ${clientPhone}</span>
-                                <span>✉ ${clientEmail}</span>
+                                <a href="tel:+91${clientPhone}" title="Call customer" onclick="event.stopPropagation();">📞 +91 ${clientPhone}</a>
+                                <a href="mailto:${clientEmail}" title="Email customer" onclick="event.stopPropagation();">✉ ${clientEmail}</a>
                             </div>
-                            <div class="admin-cust-location" title="${fullDest}">📍 ${fullDest}</div>
+                            <div class="admin-cust-location">
+                                <div><strong>📍 ${street || 'Address on file'}</strong>${landmark ? ` (Landmark: ${landmark})` : ''}</div>
+                                <div>${cityState} - <strong style="color:var(--color-gold); font-size:0.75rem;">${pincode}</strong></div>
+                            </div>
+                            <button type="button" class="btn-quick-view-dossier btn-dossier" data-order-id="${order.orderId}">
+                                <span>✦ View Full Address &amp; Dossier</span>
+                                <span>&rarr;</span>
+                            </button>
                         </div>
                     </td>
                     <td class="td-order-items">
@@ -2645,7 +2658,7 @@ function initializeAdminDashboard() {
                         <span class="admin-payment-pill ${isCod ? 'cod' : ''}">${paymentTag}</span>
                     </td>
                     <td class="td-order-status">
-                        <select class="admin-order-status-select" data-order-id="${order.orderId}">
+                        <select class="admin-order-status-select" data-order-id="${order.orderId}" onclick="event.stopPropagation();">
                             <option value="Confirmed • In Bespoke Atelier Preparation" ${statusVal.includes('Preparation') || statusVal.includes('Confirmed') ? 'selected' : ''}>In Atelier Preparation</option>
                             <option value="Crafted • Certified & Lapidary Sealed" ${statusVal.includes('Crafted') ? 'selected' : ''}>Crafted & Sealed</option>
                             <option value="Dispatched • In Insured Armored Transit" ${statusVal.includes('Dispatched') || statusVal.includes('Transit') ? 'selected' : ''}>Armored Transit</option>
@@ -2654,20 +2667,21 @@ function initializeAdminDashboard() {
                         </select>
                     </td>
                     <td class="td-actions">
-                        <div class="admin-action-btns">
-                            <button type="button" class="btn-table-action btn-dossier" data-order-id="${order.orderId}" title="Inspect Full Customer Dossier">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <div class="admin-order-actions-container">
+                            <button type="button" class="btn-admin-view-full-order btn-dossier" data-order-id="${order.orderId}" title="View Complete Order & Delivery Details">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 13px; height: 13px;">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                     <polyline points="14 2 14 8 20 8"></polyline>
                                     <line x1="16" y1="13" x2="8" y2="13"></line>
                                     <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
                                 </svg>
+                                <span>VIEW FULL ORDER</span>
                             </button>
-                            <a href="https://wa.me/91${clientPhone}?text=${encodeURIComponent(`Hello ${clientName}, this is Pavelia Haute Joaillerie Concierge regarding your Order ${order.orderId}.`)}" target="_blank" class="btn-table-action btn-wa-admin" title="Message Customer on WhatsApp">
+                            <a href="https://wa.me/91${clientPhone}?text=${encodeURIComponent(`Hello ${clientName}, this is Pavelia Haute Joaillerie Concierge regarding your Order ${order.orderId}.`)}" target="_blank" class="btn-table-action btn-wa-admin" title="Message Customer on WhatsApp" onclick="event.stopPropagation();">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                                 </svg>
+                                <span>WhatsApp</span>
                             </a>
                         </div>
                     </td>
@@ -2675,11 +2689,22 @@ function initializeAdminDashboard() {
             `;
         }).join('');
 
-        // Bind table row buttons & status dropdowns
+        // Bind table row clicks & dossier buttons
+        adminOrdersTbody.querySelectorAll('tr.admin-order-row-clickable').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('select') || e.target.closest('a') || e.target.closest('button')) {
+                    return;
+                }
+                const orderId = row.dataset.orderId;
+                if (orderId) openAdminOrderModal(orderId);
+            });
+        });
+
         adminOrdersTbody.querySelectorAll('.btn-dossier').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const orderId = btn.dataset.orderId;
-                openAdminOrderModal(orderId);
+                if (orderId) openAdminOrderModal(orderId);
             });
         });
 
@@ -2707,7 +2732,12 @@ function initializeAdminDashboard() {
         const clientPhone = addr.phone || '-';
         const clientEmail = addr.email || '-';
         const locationType = addr.addressType || 'Home';
-        const fullDest = `${clientName}, ${addr.street || ''}${addr.landmark ? ', ' + addr.landmark : ''}, ${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}`;
+        const street = addr.street || '';
+        const landmark = addr.landmark || '';
+        const city = addr.city || '';
+        const state = addr.state || '';
+        const pincode = addr.pincode || '';
+        const fullDest = `${clientName}, ${street}${landmark ? ' (Landmark: ' + landmark + ')' : ''}, ${city}, ${state} - ${pincode}`;
         const totalFormatted = `₹${(order.total || 0).toLocaleString('en-IN')}`;
         const orderDateText = order.orderDate || new Date(order.timestamp || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -2716,7 +2746,37 @@ function initializeAdminDashboard() {
         if (dossierClientPhone) dossierClientPhone.textContent = `+91 ${clientPhone}`;
         if (dossierClientEmail) dossierClientEmail.textContent = clientEmail;
         if (dossierClientType) dossierClientType.textContent = `${locationType} Destination`;
-        if (dossierClientAddress) dossierClientAddress.textContent = fullDest;
+        
+        if (dossierClientAddress) {
+            dossierClientAddress.innerHTML = `
+                <div style="font-size: 0.95rem; font-weight: 600; color: #FFFFFF; margin-bottom: 4px;">📍 ${street || 'Street address on file'}</div>
+                ${landmark ? `<div style="font-size: 0.82rem; color: #DFCA9B; margin-bottom: 4px;">✦ Landmark / Colony: <strong>${landmark}</strong></div>` : ''}
+                <div style="font-size: 0.88rem; color: #E0D5C1; margin-bottom: 4px;">${[city, state].filter(Boolean).join(', ')} - <strong style="color: var(--color-gold); font-size: 0.95rem;">${pincode}</strong></div>
+                <div style="font-size: 0.76rem; color: #9A9A9A; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(197,168,128,0.2);">
+                    Recipient: <strong style="color: #FFFFFF;">${clientName}</strong> • Phone: <strong style="color: #FFFFFF;">+91 ${clientPhone}</strong> • Type: <span style="background: rgba(197,168,128,0.15); color: var(--color-gold-light); padding: 1px 6px; border-radius: 2px;">${locationType.toUpperCase()}</span>
+                </div>
+            `;
+        }
+
+        // Setup Copy Address Button
+        const formattedAddressPlain = `Recipient: ${clientName}\nMobile: +91 ${clientPhone}\nEmail: ${clientEmail}\nAddress: ${street}${landmark ? ' (Landmark: ' + landmark + ')' : ''}\nCity/State: ${city}, ${state} - ${pincode}\nDestination: ${locationType}`;
+        const btnAdminCopyAddress = document.getElementById('btn-admin-copy-address');
+        if (btnAdminCopyAddress) {
+            btnAdminCopyAddress.onclick = (e) => {
+                e.preventDefault();
+                navigator.clipboard.writeText(formattedAddressPlain).then(() => {
+                    const showToastFn = window.showPaveliaToast || alert;
+                    showToastFn(`✦ Delivery Address for ${order.orderId} copied to clipboard!`);
+                    btnAdminCopyAddress.innerHTML = `<span>✓ COPIED TO CLIPBOARD!</span>`;
+                    setTimeout(() => {
+                        btnAdminCopyAddress.innerHTML = `<span>📋 COPY DESTINATION ADDRESS</span>`;
+                    }, 2500);
+                }).catch(() => {
+                    const showToastFn = window.showPaveliaToast || alert;
+                    showToastFn(`✦ Delivery Address: ${street}, ${city} - ${pincode}`);
+                });
+            };
+        }
 
         if (dossierLinkWa) {
             dossierLinkWa.href = `https://wa.me/91${clientPhone}?text=${encodeURIComponent(`Hello ${clientName}, this is Pavelia Haute Joaillerie Concierge regarding your Order ${order.orderId}.`)}`;
