@@ -4446,6 +4446,89 @@ img {
     color: #0A0A0A;
 }
 
+/* -------------------------------------------------------------
+   CURATED COLLECTIONS ADMIN TABLE & CARD STYLING
+   ------------------------------------------------------------- */
+.admin-collections-table {
+    width: 100%;
+    min-width: 960px;
+}
+
+.admin-collection-cell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.admin-collection-img-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid rgba(197, 168, 128, 0.3);
+    background: #0E0E0E;
+    position: relative;
+}
+
+.admin-collection-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-medium);
+}
+
+.admin-collection-cell:hover .admin-collection-img-box img {
+    transform: scale(1.08);
+}
+
+.admin-collection-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.admin-collection-title-text {
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 0.04em;
+}
+
+.admin-collection-desc-text {
+    font-size: 0.72rem;
+    color: #A89F91;
+    line-height: 1.35;
+}
+
+.admin-collection-badge-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: rgba(197, 168, 128, 0.12);
+    color: var(--color-gold-light);
+    border: 1px solid rgba(197, 168, 128, 0.3);
+    white-space: nowrap;
+}
+
+.admin-collection-cat-text {
+    font-size: 0.74rem;
+    color: #E2D7C5;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.admin-collection-link-text {
+    font-size: 0.7rem;
+    color: var(--color-gold);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
 /* Detailed Customer Order Dossier Modal */
 .admin-order-dossier-card {
     max-width: 780px !important;

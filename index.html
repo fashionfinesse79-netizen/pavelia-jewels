@@ -216,7 +216,7 @@
                 <p class="section-subtext">Sculpted from 925 sterling silver, 18K gold vermeil, and radiant hand-faceted solitaires.</p>
             </div>
 
-            <div class="category-grid">
+            <div class="category-grid" id="storefront-category-grid">
                 <!-- Rings -->
                 <a href="#showroom" class="category-card" data-category-filter="rings">
                     <div class="category-img-wrapper">
@@ -1022,6 +1022,10 @@
                 <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 <span class="tab-title">CLIENT ORDERS (<span id="admin-tab-orders-count">0</span>)</span>
             </button>
+            <button class="admin-tab-item" data-tab="collections" id="admin-tab-btn-collections">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span class="tab-title">COLLECTIONS (<span id="admin-tab-collections-count">5</span>)</span>
+            </button>
         </div>
 
         <!-- Admin Content Area -->
@@ -1125,7 +1129,124 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL 3: Curated Collections Management Panel -->
+            <div id="admin-panel-collections" class="admin-tab-panel hidden">
+                <!-- Collections Stats Row -->
+                <div class="admin-orders-stats-grid">
+                    <div class="admin-stat-card">
+                        <span class="stat-label">CURATED COLLECTIONS</span>
+                        <div class="stat-value" id="admin-stat-collections-total">5</div>
+                        <span class="stat-sub">Showroom Category Cards</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">SHOWROOM DISPLAY</span>
+                        <div class="stat-value gold-text">● LIVE</div>
+                        <span class="stat-sub">Storefront Category Showcase</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">LINKED CATALOG</span>
+                        <div class="stat-value" id="admin-stat-collections-cats">5 Categories</div>
+                        <span class="stat-sub">Dynamic Filter Routing</span>
+                    </div>
+                </div>
+
+                <div class="admin-products-table-container">
+                    <div class="admin-table-controls">
+                        <div class="admin-search-wrapper">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="admin-collections-search" placeholder="Search curated collections by title, description, or tag...">
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn-admin-add" id="btn-admin-open-add-collection" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <span>✦ ADD COLLECTION</span>
+                            </button>
+                            <button type="button" class="btn-dossier-link" id="btn-admin-reset-collections" style="font-size: 0.7rem; padding: 10px 14px; background: rgba(255,255,255,0.05); color: #C0C0C0; border-color: rgba(255,255,255,0.15);" title="Reset to Pavelia Default Haute Collections">
+                                <span>↺ RESET DEFAULTS</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-responsive-wrapper">
+                        <table class="admin-products-table admin-collections-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 32%;">COLLECTION CARD &amp; PREVIEW</th>
+                                    <th style="width: 18%;">BADGE / KICKER</th>
+                                    <th style="width: 18%;">FILTER CATEGORY</th>
+                                    <th style="width: 16%;">BUTTON TEXT</th>
+                                    <th style="width: 16%;">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-collections-tbody">
+                                <!-- Injected dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- Modal for Adding / Editing Curated Collections -->
+    <div id="admin-collection-modal" class="admin-modal-backdrop hidden">
+        <div class="admin-modal-card">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-collection-modal-title">EDIT CURATED COLLECTION</h3>
+                <button type="button" class="admin-modal-close" id="admin-collection-modal-close">&times;</button>
+            </div>
+            <form id="admin-collection-form" class="admin-modal-form">
+                <input type="hidden" id="form-collection-id" value="">
+                
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label for="form-collection-name" class="admin-form-label">Collection Title *</label>
+                        <input type="text" id="form-collection-name" class="admin-form-input" placeholder="e.g. ROYAL SOLITAIRES &amp; RINGS" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="form-collection-badge" class="admin-form-label">Badge / Pill Tag *</label>
+                        <input type="text" id="form-collection-badge" class="admin-form-input" placeholder="e.g. 05 MASTERPIECES or CURATED SETS" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-collection-desc" class="admin-form-label">Subtitle / Description *</label>
+                    <input type="text" id="form-collection-desc" class="admin-form-input" placeholder="e.g. Architectural bands, emerald cuts &amp; halo crowns" required>
+                </div>
+
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label for="form-collection-category" class="admin-form-label">Linked Showroom Category *</label>
+                        <select id="form-collection-category" class="admin-form-input" required>
+                            <option value="rings">Rings (Royal Solitaire)</option>
+                            <option value="earrings">Earrings (Ear Drops &amp; Studs)</option>
+                            <option value="necklaces">Necklaces &amp; Chokers</option>
+                            <option value="bracelets">Bracelets &amp; Bangles</option>
+                            <option value="pendants">Royal Pendants</option>
+                            <option value="all">All Showroom Pieces / Gift Vault</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="form-collection-link" class="admin-form-label">Card Action Link Text</label>
+                        <input type="text" id="form-collection-link" class="admin-form-input" placeholder="e.g. DISCOVER COLLECTION &rarr;" value="DISCOVER COLLECTION &rarr;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-collection-image" class="admin-form-label">Cover Image URL *</label>
+                    <input type="url" id="form-collection-image" class="admin-form-input" placeholder="https://images.unsplash.com/photo-..." required>
+                    <div id="form-collection-image-preview-box" style="margin-top: 10px; display: flex; align-items: center; gap: 14px;">
+                        <img id="form-collection-image-preview" src="" alt="Preview" style="width: 70px; height: 70px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(197,168,128,0.3); display: none; background: #111;">
+                        <span style="font-size: 0.72rem; color: #888;">Paste a direct high-res image URL (e.g. Unsplash) to preview and showcase live.</span>
+                    </div>
+                </div>
+
+                <div class="admin-modal-actions">
+                    <button type="button" class="btn-admin-cancel" id="btn-admin-collection-cancel">CANCEL</button>
+                    <button type="submit" class="btn-admin-save" id="btn-admin-collection-save">SAVE COLLECTION</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Floating Return to Admin Button (Shown when Admin previews storefront) -->

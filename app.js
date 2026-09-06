@@ -550,6 +550,80 @@ function savePaveliaCatalog(catalog) {
 window.getPaveliaCatalog = getPaveliaCatalog;
 window.savePaveliaCatalog = savePaveliaCatalog;
 
+const DEFAULT_COLLECTIONS = [
+    {
+        id: 'col-rings',
+        name: 'ROYAL SOLITAIRES & RINGS',
+        desc: 'Architectural bands, emerald cuts & halo crowns',
+        badge: '05 MASTERPIECES',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=700&auto=format&fit=crop',
+        categoryFilter: 'rings',
+        linkText: 'DISCOVER COLLECTION →'
+    },
+    {
+        id: 'col-earrings',
+        name: 'ARTISAN EARRINGS',
+        desc: 'Cascading diamond drops, huggies & pearl hoops',
+        badge: '05 MASTERPIECES',
+        image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=700&auto=format&fit=crop',
+        categoryFilter: 'earrings',
+        linkText: 'DISCOVER COLLECTION →'
+    },
+    {
+        id: 'col-necklaces',
+        name: 'STATEMENT CHOKERS & PENDANTS',
+        desc: 'Royal collars, star pendants & layered chains',
+        badge: '05 MASTERPIECES',
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=700&auto=format&fit=crop',
+        categoryFilter: 'necklaces',
+        linkText: 'DISCOVER COLLECTION →'
+    },
+    {
+        id: 'col-bracelets',
+        name: 'HEIRLOOM BRACELETS & BANGLES',
+        desc: 'Riviera tennis bangles, hammered gold cuffs',
+        badge: '05 MASTERPIECES',
+        image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=700&auto=format&fit=crop',
+        categoryFilter: 'bracelets',
+        linkText: 'DISCOVER COLLECTION →'
+    },
+    {
+        id: 'col-giftvault',
+        name: 'THE ATELIER GIFT VAULT',
+        desc: 'Velvet boxed parures & private commissions',
+        badge: 'CURATED SETS',
+        image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=700&auto=format&fit=crop',
+        categoryFilter: 'all',
+        linkText: 'DISCOVER COLLECTION →'
+    }
+];
+
+function getPaveliaCollections() {
+    try {
+        const stored = localStorage.getItem('pavelia_collections');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.warn('Pavelia collections storage notice:', e);
+    }
+    return DEFAULT_COLLECTIONS;
+}
+
+function savePaveliaCollections(collections) {
+    try {
+        localStorage.setItem('pavelia_collections', JSON.stringify(collections));
+    } catch (e) {
+        console.error('Error persisting Pavelia collections:', e);
+    }
+}
+
+window.getPaveliaCollections = getPaveliaCollections;
+window.savePaveliaCollections = savePaveliaCollections;
+
 /* ==========================================================================
    3. SHOWROOM, WISHLIST, SEARCH & CART ARCHITECTURE
    ========================================================================== */
@@ -796,17 +870,44 @@ function initializePaveliaCommerce() {
         });
     });
 
-    // Category Card clicks linking to filter
-    document.querySelectorAll('[data-category-filter]').forEach(link => {
-        link.addEventListener('click', (e) => {
-            const cat = link.dataset.categoryFilter;
-            activeCategory = cat;
-            filterTabs.forEach(t => {
-                t.classList.toggle('active', t.dataset.filter === cat);
+    // -------------------------------------------------------------
+    // DYNAMIC HAUTE COLLECTIONS SHOWCASE RENDERING
+    // -------------------------------------------------------------
+    function renderStorefrontCollections() {
+        const gridEl = document.getElementById('storefront-category-grid') || document.querySelector('.category-grid');
+        if (!gridEl) return;
+        const collections = getPaveliaCollections();
+        
+        gridEl.innerHTML = collections.map(col => `
+            <a href="#showroom" class="category-card" data-category-filter="${col.categoryFilter || 'all'}" data-collection-id="${col.id}">
+                <div class="category-img-wrapper">
+                    <img src="${col.image}" alt="${col.name}" class="category-img" loading="lazy">
+                    <div class="category-overlay"></div>
+                    <span class="category-badge-count">${col.badge || '05 MASTERPIECES'}</span>
+                </div>
+                <div class="category-info-box">
+                    <h4 class="category-name">${col.name}</h4>
+                    <span class="category-desc">${col.desc || ''}</span>
+                    <span class="category-link">${col.linkText || 'DISCOVER COLLECTION &rarr;'}</span>
+                </div>
+            </a>
+        `).join('');
+
+        // Attach category filtering click listeners
+        gridEl.querySelectorAll('[data-category-filter]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const cat = link.dataset.categoryFilter;
+                activeCategory = cat;
+                filterTabs.forEach(t => {
+                    t.classList.toggle('active', t.dataset.filter === cat);
+                });
+                renderShowroomProducts();
             });
-            renderShowroomProducts();
         });
-    });
+    }
+
+    renderStorefrontCollections();
+    window.renderStorefrontCollections = renderStorefrontCollections;
 
     // Sort Dropdown Handler
     if (sortSelect) {
@@ -2043,10 +2144,13 @@ function initializeAdminDashboard() {
     // Tab Navigation Elements
     const adminTabBtnProducts = document.getElementById('admin-tab-btn-products');
     const adminTabBtnOrders = document.getElementById('admin-tab-btn-orders');
+    const adminTabBtnCollections = document.getElementById('admin-tab-btn-collections');
     const adminTabProdCount = document.getElementById('admin-tab-prod-count');
     const adminTabOrdersCount = document.getElementById('admin-tab-orders-count');
+    const adminTabCollectionsCount = document.getElementById('admin-tab-collections-count');
     const adminPanelProducts = document.getElementById('admin-panel-products');
     const adminPanelOrders = document.getElementById('admin-panel-orders');
+    const adminPanelCollections = document.getElementById('admin-panel-collections');
     
     // Products Table Elements
     const adminProductSearch = document.getElementById('admin-product-search');
@@ -2060,6 +2164,14 @@ function initializeAdminDashboard() {
     const adminStatOrdersTotal = document.getElementById('admin-stat-orders-total');
     const adminStatOrdersRev = document.getElementById('admin-stat-orders-rev');
     const adminStatOrdersPending = document.getElementById('admin-stat-orders-pending');
+
+    // Collections Table & Stats Elements
+    const adminStatCollectionsTotal = document.getElementById('admin-stat-collections-total');
+    const adminStatCollectionsCats = document.getElementById('admin-stat-collections-cats');
+    const adminCollectionsSearch = document.getElementById('admin-collections-search');
+    const btnOpenAddCollection = document.getElementById('btn-admin-open-add-collection');
+    const btnResetCollections = document.getElementById('btn-admin-reset-collections');
+    const adminCollectionsTbody = document.getElementById('admin-collections-tbody');
     
     // Product Modal Elements
     const productModal = document.getElementById('admin-product-modal');
@@ -2068,7 +2180,7 @@ function initializeAdminDashboard() {
     const productCancelBtn = document.getElementById('btn-admin-product-cancel');
     const productForm = document.getElementById('admin-product-form');
     
-    // Form Inputs
+    // Product Form Inputs
     const formProductId = document.getElementById('form-product-id');
     const formProductName = document.getElementById('form-product-name');
     const formProductCategory = document.getElementById('form-product-category');
@@ -2079,6 +2191,23 @@ function initializeAdminDashboard() {
     const formProductSpecs = document.getElementById('form-product-specs');
     const formProductImage = document.getElementById('form-product-image');
     const formProductImage2 = document.getElementById('form-product-image2');
+
+    // Collection Modal Elements
+    const collectionModal = document.getElementById('admin-collection-modal');
+    const collectionModalTitle = document.getElementById('admin-collection-modal-title');
+    const collectionModalCloseBtn = document.getElementById('admin-collection-modal-close');
+    const collectionCancelBtn = document.getElementById('btn-admin-collection-cancel');
+    const collectionForm = document.getElementById('admin-collection-form');
+
+    // Collection Form Inputs
+    const formCollectionId = document.getElementById('form-collection-id');
+    const formCollectionName = document.getElementById('form-collection-name');
+    const formCollectionBadge = document.getElementById('form-collection-badge');
+    const formCollectionDesc = document.getElementById('form-collection-desc');
+    const formCollectionCategory = document.getElementById('form-collection-category');
+    const formCollectionLink = document.getElementById('form-collection-link');
+    const formCollectionImage = document.getElementById('form-collection-image');
+    const formCollectionImagePreview = document.getElementById('form-collection-image-preview');
 
     // Order Dossier Modal Elements
     const orderModal = document.getElementById('admin-order-modal');
@@ -2109,6 +2238,7 @@ function initializeAdminDashboard() {
         }
         renderAdminProductsTable();
         renderAdminOrdersTable();
+        renderAdminCollectionsTable();
     };
 
     window.closeAdminFullview = (showFloatingReturn = false) => {
@@ -2133,20 +2263,33 @@ function initializeAdminDashboard() {
         if (targetTab === 'products') {
             if (adminTabBtnProducts) adminTabBtnProducts.classList.add('active');
             if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
+            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
             if (adminPanelProducts) adminPanelProducts.classList.remove('hidden');
             if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
+            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
             renderAdminProductsTable();
         } else if (targetTab === 'orders') {
             if (adminTabBtnOrders) adminTabBtnOrders.classList.add('active');
             if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
+            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
             if (adminPanelOrders) adminPanelOrders.classList.remove('hidden');
             if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
+            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
             renderAdminOrdersTable();
+        } else if (targetTab === 'collections') {
+            if (adminTabBtnCollections) adminTabBtnCollections.classList.add('active');
+            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
+            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
+            if (adminPanelCollections) adminPanelCollections.classList.remove('hidden');
+            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
+            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
+            renderAdminCollectionsTable();
         }
     }
 
     if (adminTabBtnProducts) adminTabBtnProducts.addEventListener('click', () => switchAdminTab('products'));
     if (adminTabBtnOrders) adminTabBtnOrders.addEventListener('click', () => switchAdminTab('orders'));
+    if (adminTabBtnCollections) adminTabBtnCollections.addEventListener('click', () => switchAdminTab('collections'));
 
     // -------------------------------------------------------------
     // PRODUCTS TABLE RENDERING
@@ -2869,6 +3012,277 @@ function initializeAdminDashboard() {
     if (adminOrdersSearch) adminOrdersSearch.addEventListener('input', renderAdminOrdersTable);
     if (adminOrdersFilter) adminOrdersFilter.addEventListener('change', renderAdminOrdersTable);
 
+    // -------------------------------------------------------------
+    // CURATED COLLECTIONS TABLE & MANAGEMENT RENDERING
+    // -------------------------------------------------------------
+    const categoryNameMap = {
+        rings: 'Rings (Royal Solitaires)',
+        earrings: 'Earrings (Drops & Studs)',
+        necklaces: 'Necklaces & Chokers',
+        bracelets: 'Bracelets & Bangles',
+        pendants: 'Royal Pendants',
+        all: 'All Showroom Pieces / Gift Vault'
+    };
+
+    function renderAdminCollectionsTable() {
+        if (!adminCollectionsTbody) return;
+
+        const collections = getPaveliaCollections();
+        if (adminTabCollectionsCount) {
+            adminTabCollectionsCount.textContent = collections.length;
+        }
+        if (adminStatCollectionsTotal) {
+            adminStatCollectionsTotal.textContent = collections.length;
+        }
+        if (adminStatCollectionsCats) {
+            const uniqueCats = new Set(collections.map(c => c.categoryFilter || 'all')).size;
+            adminStatCollectionsCats.textContent = `${uniqueCats} Categories`;
+        }
+
+        const searchTerm = (adminCollectionsSearch ? adminCollectionsSearch.value : '').trim().toLowerCase();
+
+        let filtered = collections.filter(col => {
+            if (!searchTerm) return true;
+            return (col.name && col.name.toLowerCase().includes(searchTerm)) ||
+                   (col.desc && col.desc.toLowerCase().includes(searchTerm)) ||
+                   (col.badge && col.badge.toLowerCase().includes(searchTerm)) ||
+                   (col.categoryFilter && col.categoryFilter.toLowerCase().includes(searchTerm));
+        });
+
+        if (filtered.length === 0) {
+            adminCollectionsTbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--color-text-subtle); font-style: italic;">
+                        No curated collections found matching your search.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        adminCollectionsTbody.innerHTML = filtered.map(col => {
+            const categoryLabel = categoryNameMap[col.categoryFilter] || (col.categoryFilter ? col.categoryFilter.toUpperCase() : 'ALL');
+            return `
+                <tr data-collection-id="${col.id}">
+                    <td>
+                        <div class="admin-collection-cell">
+                            <div class="admin-collection-img-box">
+                                <img src="${col.image}" alt="${col.name}" loading="lazy">
+                            </div>
+                            <div class="admin-collection-meta">
+                                <span class="admin-collection-title-text">${col.name}</span>
+                                <span class="admin-collection-desc-text">${col.desc || ''}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="admin-collection-badge-tag">${col.badge || '05 MASTERPIECES'}</span>
+                    </td>
+                    <td>
+                        <span class="admin-collection-cat-text">${categoryLabel}</span>
+                    </td>
+                    <td>
+                        <span class="admin-collection-link-text">${col.linkText || 'DISCOVER COLLECTION &rarr;'}</span>
+                    </td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button type="button" class="btn-table-action btn-edit-collection" data-collection-id="${col.id}" title="Edit Collection Card">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                <span>Edit</span>
+                            </button>
+                            <button type="button" class="btn-table-action btn-view-collection-live" data-category-filter="${col.categoryFilter || 'all'}" title="Preview in Showroom">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <span>Preview</span>
+                            </button>
+                            <button type="button" class="btn-table-action btn-action-delete btn-delete-collection" data-collection-id="${col.id}" title="Remove Collection Card">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Attach event listeners for table buttons
+        adminCollectionsTbody.querySelectorAll('.btn-edit-collection').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const colId = btn.dataset.collectionId;
+                openEditCollectionModal(colId);
+            });
+        });
+
+        adminCollectionsTbody.querySelectorAll('.btn-view-collection-live').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cat = btn.dataset.categoryFilter;
+                window.closeAdminFullview(true);
+                const filterBtn = document.querySelector(`.filter-tab[data-filter="${cat}"]`);
+                if (filterBtn) filterBtn.click();
+                const showroom = document.getElementById('showroom');
+                if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        adminCollectionsTbody.querySelectorAll('.btn-delete-collection').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const colId = btn.dataset.collectionId;
+                handleDeleteCollection(colId);
+            });
+        });
+    }
+
+    // Modal Opening & Closing
+    function openAddCollectionModal() {
+        if (!collectionModal) return;
+        if (collectionForm) collectionForm.reset();
+        if (formCollectionId) formCollectionId.value = '';
+        if (formCollectionLink) formCollectionLink.value = 'DISCOVER COLLECTION →';
+        if (formCollectionBadge) formCollectionBadge.value = '05 MASTERPIECES';
+        if (formCollectionImagePreview) {
+            formCollectionImagePreview.src = '';
+            formCollectionImagePreview.style.display = 'none';
+        }
+        if (collectionModalTitle) collectionModalTitle.textContent = 'ADD NEW CURATED COLLECTION';
+        collectionModal.classList.remove('hidden');
+    }
+
+    function openEditCollectionModal(collectionId) {
+        if (!collectionModal) return;
+        const collections = getPaveliaCollections();
+        const col = collections.find(c => c.id === collectionId);
+        if (!col) return;
+
+        if (formCollectionId) formCollectionId.value = col.id;
+        if (formCollectionName) formCollectionName.value = col.name;
+        if (formCollectionBadge) formCollectionBadge.value = col.badge || '05 MASTERPIECES';
+        if (formCollectionDesc) formCollectionDesc.value = col.desc || '';
+        if (formCollectionCategory) formCollectionCategory.value = col.categoryFilter || 'all';
+        if (formCollectionLink) formCollectionLink.value = col.linkText || 'DISCOVER COLLECTION →';
+        if (formCollectionImage) formCollectionImage.value = col.image || '';
+
+        if (formCollectionImagePreview) {
+            if (col.image) {
+                formCollectionImagePreview.src = col.image;
+                formCollectionImagePreview.style.display = 'block';
+            } else {
+                formCollectionImagePreview.style.display = 'none';
+            }
+        }
+
+        if (collectionModalTitle) collectionModalTitle.textContent = `EDIT CURATED COLLECTION: ${col.name}`;
+        collectionModal.classList.remove('hidden');
+    }
+
+    function closeCollectionModal() {
+        if (collectionModal) collectionModal.classList.add('hidden');
+    }
+
+    // Image preview live sync
+    if (formCollectionImage && formCollectionImagePreview) {
+        formCollectionImage.addEventListener('input', () => {
+            const url = formCollectionImage.value.trim();
+            if (url) {
+                formCollectionImagePreview.src = url;
+                formCollectionImagePreview.style.display = 'block';
+            } else {
+                formCollectionImagePreview.style.display = 'none';
+            }
+        });
+    }
+
+    // Form Submit
+    function handleCollectionFormSubmit(e) {
+        e.preventDefault();
+        const id = formCollectionId ? formCollectionId.value : '';
+        const name = formCollectionName ? formCollectionName.value.trim().toUpperCase() : '';
+        const badge = formCollectionBadge ? formCollectionBadge.value.trim().toUpperCase() : '05 MASTERPIECES';
+        const desc = formCollectionDesc ? formCollectionDesc.value.trim() : '';
+        const categoryFilter = formCollectionCategory ? formCollectionCategory.value : 'all';
+        const linkText = formCollectionLink ? formCollectionLink.value.trim() : 'DISCOVER COLLECTION →';
+        const image = formCollectionImage ? formCollectionImage.value.trim() : '';
+
+        if (!name || !image) {
+            alert('Please provide a collection title and cover image URL.');
+            return;
+        }
+
+        let collections = getPaveliaCollections();
+
+        if (id) {
+            const idx = collections.findIndex(c => c.id === id);
+            if (idx !== -1) {
+                collections[idx] = {
+                    ...collections[idx],
+                    name,
+                    badge,
+                    desc,
+                    categoryFilter,
+                    linkText,
+                    image
+                };
+            }
+        } else {
+            const newId = `col-${categoryFilter}-${Date.now().toString().slice(-4)}`;
+            collections.push({
+                id: newId,
+                name,
+                badge,
+                desc,
+                categoryFilter,
+                linkText,
+                image
+            });
+        }
+
+        savePaveliaCollections(collections);
+        closeCollectionModal();
+        renderAdminCollectionsTable();
+
+        if (typeof window.renderStorefrontCollections === 'function') {
+            window.renderStorefrontCollections();
+        }
+
+        const showToastFn = window.showPaveliaToast || alert;
+        showToastFn(`✦ Curated Collection "${name}" updated and live on storefront.`);
+    }
+
+    function handleDeleteCollection(collectionId) {
+        let collections = getPaveliaCollections();
+        const col = collections.find(c => c.id === collectionId);
+        if (!col) return;
+
+        if (confirm(`Are you sure you wish to remove "${col.name}" from the curated showcase cards on the storefront?`)) {
+            collections = collections.filter(c => c.id !== collectionId);
+            savePaveliaCollections(collections);
+            renderAdminCollectionsTable();
+            if (typeof window.renderStorefrontCollections === 'function') {
+                window.renderStorefrontCollections();
+            }
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Collection card "${col.name}" removed.`);
+        }
+    }
+
+    function handleResetCollections() {
+        if (confirm('Reset all curated collection showcase cards back to Pavelia original presets?')) {
+            savePaveliaCollections(DEFAULT_COLLECTIONS);
+            renderAdminCollectionsTable();
+            if (typeof window.renderStorefrontCollections === 'function') {
+                window.renderStorefrontCollections();
+            }
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn('✦ Curated collections reset to Pavelia presets.');
+        }
+    }
+
     // Event Listeners
     if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);
     if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', closeProductModal);
@@ -2877,6 +3291,20 @@ function initializeAdminDashboard() {
     
     if (adminProductSearch) adminProductSearch.addEventListener('input', renderAdminProductsTable);
     if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', renderAdminProductsTable);
+
+    // Collections Event Listeners
+    if (btnOpenAddCollection) btnOpenAddCollection.addEventListener('click', openAddCollectionModal);
+    if (btnResetCollections) btnResetCollections.addEventListener('click', handleResetCollections);
+    if (collectionModalCloseBtn) collectionModalCloseBtn.addEventListener('click', closeCollectionModal);
+    if (collectionCancelBtn) collectionCancelBtn.addEventListener('click', closeCollectionModal);
+    if (collectionForm) collectionForm.addEventListener('submit', handleCollectionFormSubmit);
+    if (adminCollectionsSearch) adminCollectionsSearch.addEventListener('input', renderAdminCollectionsTable);
+
+    if (collectionModal) {
+        collectionModal.addEventListener('click', (e) => {
+            if (e.target === collectionModal) closeCollectionModal();
+        });
+    }
     
     if (btnPreviewStorefront) {
         btnPreviewStorefront.addEventListener('click', () => {
