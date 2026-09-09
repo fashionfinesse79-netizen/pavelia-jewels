@@ -725,8 +725,6 @@ window.PaveliaRouter = (function() {
     }
 
     function applyRoute(parsed, isBack = false) {
-        isTransitioning = true;
-
         try {
             const targetOverlay = (parsed.type === 'modal' || parsed.type === 'checkout') ? parsed.overlayId : null;
 
@@ -922,6 +920,8 @@ window.PaveliaRouter = (function() {
                     if (modalClosers['nav-menu']) {
                         try { modalClosers['nav-menu'](); } catch (err) {}
                     }
+                    navigate(clean, { replace: true });
+                    return;
                 }
 
                 navigate(clean);
