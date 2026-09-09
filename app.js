@@ -853,6 +853,15 @@ window.PaveliaRouter = (function() {
         if (category && category !== 'all' && (route === 'showroom' || route === 'home')) {
             route = `showroom/${category}`;
         }
+
+        const currentVisibleSec = getActiveSectionFromViewport();
+        if (currentVisibleSec !== 'home' && currentVisibleSec !== route && window.location.hash === '#/home') {
+            const sourceHash = '#/' + (currentVisibleSec === 'bespoke-section' ? 'bespoke' : currentVisibleSec);
+            history.replaceState(null, '', sourceHash);
+            lastKnownHash = sourceHash;
+            currentSection = currentVisibleSec;
+        }
+
         navigate(route, { replace });
     }
 
@@ -939,16 +948,8 @@ window.PaveliaRouter = (function() {
             clearTimeout(scrollSyncTimer);
             scrollSyncTimer = setTimeout(() => {
                 if (activeOverlayId) return;
-                const activeSec = getActiveSectionFromViewport();
-                currentSection = activeSec;
-                const expectedHash = '#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec);
-                const currentH = window.location.hash;
-                if (currentH.startsWith('#/showroom/') && activeSec === 'showroom') return;
-                if (!currentH.startsWith('#/product') && !currentH.startsWith('#/checkout') && currentH !== expectedHash) {
-                    history.replaceState(null, '', expectedHash);
-                    lastKnownHash = expectedHash;
-                }
-            }, 150);
+                currentSection = getActiveSectionFromViewport();
+            }, 100);
         }, { passive: true });
     }
 
