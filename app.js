@@ -635,6 +635,7 @@ window.PaveliaRouter = (function() {
     let activeOverlayId = null;
     let currentSection = 'home';
     let lastKnownHash = '';
+    let modalReturnState = null;
 
     const modalClosers = {};
     const modalOpeners = {};
@@ -645,6 +646,30 @@ window.PaveliaRouter = (function() {
 
     function registerModalOpener(modalId, openerFn) {
         modalOpeners[modalId] = openerFn;
+    }
+
+    function getActiveSectionFromViewport() {
+        const sectionDefs = [
+            { id: 'about-us', el: document.getElementById('about-us') },
+            { id: 'bespoke', el: document.getElementById('bespoke-section') },
+            { id: 'heritage', el: document.getElementById('heritage') },
+            { id: 'showroom', el: document.getElementById('showroom') },
+            { id: 'new-arrivals', el: document.getElementById('new-arrivals') },
+            { id: 'jewellery', el: document.getElementById('jewellery') },
+            { id: 'home', el: document.getElementById('hero') || document.getElementById('hero-interactive') }
+        ];
+        const scrollY = window.scrollY || window.pageYOffset || 0;
+        const triggerPoint = scrollY + (typeof window.innerHeight === 'number' ? window.innerHeight * 0.35 : 300);
+
+        for (const sec of sectionDefs) {
+            if (sec.el && typeof sec.el.offsetTop === 'number') {
+                const top = sec.el.offsetTop;
+                if (triggerPoint >= top) {
+                    return sec.id;
+                }
+            }
+        }
+        return currentSection || 'home';
     }
 
     function parseHash(hash) {
@@ -726,6 +751,7 @@ window.PaveliaRouter = (function() {
 
     function applyRoute(parsed, isBack = false) {
         try {
+            const isClosingOverlay = !!activeOverlayId && (parsed.type !== 'modal' && parsed.type !== 'checkout');
             const targetOverlay = (parsed.type === 'modal' || parsed.type === 'checkout') ? parsed.overlayId : null;
 
             // Close any open overlays that don't belong to the target route
@@ -745,13 +771,33 @@ window.PaveliaRouter = (function() {
                 document.body.classList.remove('lock-scroll');
             }
 
+            // If an overlay was just closed, PRESERVE exact scroll position and section!
+            if (isClosingOverlay && modalReturnState) {
+                const savedY = modalReturnState.scrollY;
+                const savedSec = modalReturnState.section;
+                const savedHash = modalReturnState.hash;
+                modalReturnState = null;
+
+                if (parsed.target === 'home' && savedSec !== 'home') {
+                    history.replaceState(null, '', savedHash);
+                    lastKnownHash = savedHash;
+                    currentSection = savedSec;
+                } else if (parsed.type === 'section') {
+                    currentSection = parsed.target;
+                }
+
+                window.scrollTo({ top: savedY, behavior: 'instant' });
+                return;
+            }
+
             if (parsed.type === 'section') {
                 const targetSec = parsed.target;
+                const priorSec = currentSection;
                 currentSection = targetSec;
 
                 if (targetSec === 'home') {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
+                } else if (targetSec !== priorSec || isBack) {
                     const elId = (targetSec === 'bespoke') ? 'bespoke-section' : targetSec;
                     const el = document.getElementById(elId);
                     if (el) {
@@ -811,6 +857,19 @@ window.PaveliaRouter = (function() {
     }
 
     function pushModalState(modalId, payload = {}) {
+        const activeSec = getActiveSectionFromViewport();
+        const baseHash = (window.location.hash && !window.location.hash.startsWith('#/product') && !window.location.hash.startsWith('#/checkout') && !window.location.hash.startsWith('#/cart'))
+            ? window.location.hash
+            : ('#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec));
+
+        modalReturnState = {
+            modalId: modalId,
+            section: activeSec,
+            hash: baseHash,
+            scrollY: window.scrollY || window.pageYOffset || 0
+        };
+        currentSection = activeSec;
+
         let route = modalId;
         if (modalId === 'quickview' && payload.productId) {
             route = `product/${payload.productId}`;
@@ -821,6 +880,20 @@ window.PaveliaRouter = (function() {
     }
 
     function pushCheckoutStep(stepNumber) {
+        if (!modalReturnState) {
+            const activeSec = getActiveSectionFromViewport();
+            const baseHash = (window.location.hash && !window.location.hash.startsWith('#/checkout') && !window.location.hash.startsWith('#/product'))
+                ? window.location.hash
+                : ('#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec));
+
+            modalReturnState = {
+                modalId: 'checkout',
+                section: activeSec,
+                hash: baseHash,
+                scrollY: window.scrollY || window.pageYOffset || 0
+            };
+            currentSection = activeSec;
+        }
         if (stepNumber === 1) navigate('checkout');
         else if (stepNumber === 2) navigate('checkout/payment');
         else if (stepNumber === 3) navigate('checkout/confirmation');
@@ -837,8 +910,8 @@ window.PaveliaRouter = (function() {
             internalHistoryCount = Math.max(0, internalHistoryCount - 1);
             window.history.back();
         } else {
-            const target = fallbackSection || currentSection || 'home';
-            navigate(target, { replace: true });
+            const target = fallbackSection || (modalReturnState && modalReturnState.section) || currentSection || 'home';
+            applyRoute({ type: 'section', target: target });
         }
     }
 
@@ -859,6 +932,26 @@ window.PaveliaRouter = (function() {
         applyRoute(parsed, true);
     }
 
+    let scrollSyncTimer = null;
+    function setupScrollSectionSync() {
+        window.addEventListener('scroll', () => {
+            if (activeOverlayId) return;
+            clearTimeout(scrollSyncTimer);
+            scrollSyncTimer = setTimeout(() => {
+                if (activeOverlayId) return;
+                const activeSec = getActiveSectionFromViewport();
+                currentSection = activeSec;
+                const expectedHash = '#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec);
+                const currentH = window.location.hash;
+                if (currentH.startsWith('#/showroom/') && activeSec === 'showroom') return;
+                if (!currentH.startsWith('#/product') && !currentH.startsWith('#/checkout') && currentH !== expectedHash) {
+                    history.replaceState(null, '', expectedHash);
+                    lastKnownHash = expectedHash;
+                }
+            }, 150);
+        }, { passive: true });
+    }
+
     function init() {
         const initialHash = window.location.hash;
         if (!initialHash || initialHash === '#' || initialHash === '#/') {
@@ -872,6 +965,7 @@ window.PaveliaRouter = (function() {
         window.addEventListener('hashchange', onRouteEvent);
         window.addEventListener('popstate', onRouteEvent);
         setupGlobalLinkInterception();
+        setupScrollSectionSync();
     }
 
     function handleInitialRoute() {
@@ -916,10 +1010,13 @@ window.PaveliaRouter = (function() {
                     return;
                 }
 
-                if (activeOverlayId === 'nav-menu') {
+                if (activeOverlayId === 'nav-menu' || anchor.closest('#nav-overlay')) {
                     if (modalClosers['nav-menu']) {
                         try { modalClosers['nav-menu'](); } catch (err) {}
                     }
+                    activeOverlayId = null;
+                    modalReturnState = null;
+                    document.body.classList.remove('lock-scroll');
                     navigate(clean, { replace: true });
                     return;
                 }
@@ -1912,7 +2009,7 @@ function initializeNavigation() {
             closeMenu();
             const targetId = link.getAttribute('data-target') || 'home';
             if (window.PaveliaRouter) {
-                window.PaveliaRouter.navigateToSection(targetId);
+                window.PaveliaRouter.navigateToSection(targetId, { replace: true });
             } else {
                 const section = document.getElementById(targetId === 'home' ? 'hero-interactive' : targetId);
                 if (section) {
