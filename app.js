@@ -401,6 +401,9 @@ function runClassicPreloader() {
                 document.body.classList.remove('lock-scroll');
                 initDOMParallax();
                 initCarousel();
+                if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
+                    window.PaveliaRouter.handleInitialRoute();
+                }
             }, 1200);
 
         }, 300);
@@ -623,6 +626,325 @@ function savePaveliaCollections(collections) {
 
 window.getPaveliaCollections = getPaveliaCollections;
 window.savePaveliaCollections = savePaveliaCollections;
+
+/* ==========================================================================
+   2.5 GLOBAL CENTRALIZED SPA ROUTER & BROWSER/DEVICE BACK NAVIGATION
+   ========================================================================== */
+window.PaveliaRouter = (function() {
+    let internalHistoryCount = 0;
+    let activeOverlayId = null;
+    let currentSection = 'home';
+    let lastKnownHash = '';
+
+    const modalClosers = {};
+    const modalOpeners = {};
+
+    function registerModalCloser(modalId, closerFn) {
+        modalClosers[modalId] = closerFn;
+    }
+
+    function registerModalOpener(modalId, openerFn) {
+        modalOpeners[modalId] = openerFn;
+    }
+
+    function parseHash(hash) {
+        if (!hash) return { type: 'section', target: 'home', category: null, param: null };
+        let path = hash.replace(/^#\/?/, '').trim();
+        if (!path) return { type: 'section', target: 'home', category: null, param: null };
+
+        // 1. Checkout multi-step flow
+        if (path.startsWith('checkout')) {
+            let step = 1;
+            if (path.includes('payment') || path.includes('step-2') || path.includes('/2')) step = 2;
+            else if (path.includes('confirmation') || path.includes('step-3') || path.includes('/3')) step = 3;
+            return { type: 'checkout', overlayId: 'checkout', step };
+        }
+
+        // 2. Product quickview: product/:id, quickview/:id, product-:id
+        const productMatch = path.match(/^(?:product|quickview)[\/\-:](.+)$/);
+        if (productMatch) {
+            return { type: 'modal', overlayId: 'quickview', param: decodeURIComponent(productMatch[1]) };
+        }
+
+        // 3. Customer dossier: cust-dossier/:id
+        const dossierMatch = path.match(/^cust-dossier[\/\-:](.+)$/);
+        if (dossierMatch) {
+            return { type: 'modal', overlayId: 'cust-dossier', param: decodeURIComponent(dossierMatch[1]) };
+        }
+
+        // 4. Showroom with category filter: showroom/rings, showroom-rings, showroom?category=rings
+        const showroomMatch = path.match(/^showroom[\/\-:]([a-zA-Z0-9_\-]+)$/);
+        if (showroomMatch) {
+            return { type: 'section', target: 'showroom', category: showroomMatch[1] };
+        }
+
+        // 5. Recognized modals / drawers / overlays
+        const overlays = {
+            'cart': 'cart',
+            'wishlist': 'wishlist',
+            'search': 'search',
+            'account': 'auth',
+            'auth': 'auth',
+            'signin': 'auth',
+            'signup': 'auth',
+            'sizeguide': 'sizeguide',
+            'menu': 'nav-menu',
+            'nav-menu': 'nav-menu',
+            'razorpay': 'razorpay',
+            'admin': 'admin',
+            'admin-product': 'admin-product',
+            'admin-order': 'admin-order',
+            'admin-collection': 'admin-collection',
+            'cust-dossier': 'cust-dossier'
+        };
+        if (overlays[path]) {
+            return { type: 'modal', overlayId: overlays[path] };
+        }
+
+        // 6. Recognized sections
+        const sections = {
+            'home': 'home',
+            'hero': 'home',
+            'hero-interactive': 'home',
+            'jewellery': 'jewellery',
+            'collections': 'jewellery',
+            'new-arrivals': 'new-arrivals',
+            'campaigns': 'new-arrivals',
+            'showroom': 'showroom',
+            'heritage': 'heritage',
+            'bespoke': 'bespoke-section',
+            'bespoke-section': 'bespoke-section',
+            'about-us': 'about-us',
+            'about': 'about-us'
+        };
+        if (sections[path]) {
+            return { type: 'section', target: sections[path], category: null };
+        }
+
+        return { type: 'section', target: 'home', category: null };
+    }
+
+    function applyRoute(parsed, isBack = false) {
+        isTransitioning = true;
+
+        try {
+            const targetOverlay = (parsed.type === 'modal' || parsed.type === 'checkout') ? parsed.overlayId : null;
+
+            // Close any open overlays that don't belong to the target route
+            Object.keys(modalClosers).forEach(id => {
+                if (id !== targetOverlay && typeof modalClosers[id] === 'function') {
+                    try {
+                        modalClosers[id]();
+                    } catch (e) {
+                        console.warn('PaveliaRouter: error closing overlay ' + id, e);
+                    }
+                }
+            });
+
+            activeOverlayId = targetOverlay;
+
+            if (!targetOverlay) {
+                document.body.classList.remove('lock-scroll');
+            }
+
+            if (parsed.type === 'section') {
+                const targetSec = parsed.target;
+                currentSection = targetSec;
+
+                if (targetSec === 'home') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    const elId = (targetSec === 'bespoke') ? 'bespoke-section' : targetSec;
+                    const el = document.getElementById(elId);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+
+                if (targetSec === 'showroom' && typeof window.setPaveliaCategoryFilter === 'function') {
+                    window.setPaveliaCategoryFilter(parsed.category || 'all');
+                }
+            } else if (parsed.type === 'checkout') {
+                if (typeof window.setPaveliaCheckoutStep === 'function') {
+                    window.setPaveliaCheckoutStep(parsed.step, true);
+                }
+            } else if (parsed.type === 'modal') {
+                if (parsed.overlayId === 'quickview' && parsed.param && typeof window.openQuickview === 'function') {
+                    window.openQuickview(parsed.param, false);
+                } else if (typeof modalOpeners[parsed.overlayId] === 'function') {
+                    modalOpeners[parsed.overlayId](false);
+                }
+            }
+        } catch (err) {
+            console.error('PaveliaRouter: error applying route', err);
+        }
+    }
+
+    function navigate(routeStr, options = {}) {
+        let cleanRoute = (routeStr || '').replace(/^#\/?/, '').trim();
+        if (!cleanRoute) cleanRoute = 'home';
+        const newHash = '#/' + cleanRoute;
+
+        if (window.location.hash === newHash) {
+            applyRoute(parseHash(newHash));
+            return;
+        }
+
+        if (options.replace) {
+            history.replaceState(null, '', newHash);
+            lastKnownHash = newHash;
+            applyRoute(parseHash(newHash));
+        } else {
+            internalHistoryCount++;
+            lastKnownHash = newHash;
+            window.location.hash = newHash;
+            applyRoute(parseHash(newHash));
+        }
+    }
+
+    function navigateToSection(sectionId, options = {}) {
+        const { category = null, replace = false } = options;
+        let route = sectionId;
+        if (sectionId === 'hero' || sectionId === 'hero-interactive') route = 'home';
+        if (category && category !== 'all' && (route === 'showroom' || route === 'home')) {
+            route = `showroom/${category}`;
+        }
+        navigate(route, { replace });
+    }
+
+    function pushModalState(modalId, payload = {}) {
+        let route = modalId;
+        if (modalId === 'quickview' && payload.productId) {
+            route = `product/${payload.productId}`;
+        } else if (modalId === 'cust-dossier' && payload.orderId) {
+            route = `cust-dossier/${payload.orderId}`;
+        }
+        navigate(route);
+    }
+
+    function pushCheckoutStep(stepNumber) {
+        if (stepNumber === 1) navigate('checkout');
+        else if (stepNumber === 2) navigate('checkout/payment');
+        else if (stepNumber === 3) navigate('checkout/confirmation');
+    }
+
+    function replaceCheckoutStep(stepNumber) {
+        if (stepNumber === 1) navigate('checkout', { replace: true });
+        else if (stepNumber === 2) navigate('checkout/payment', { replace: true });
+        else if (stepNumber === 3) navigate('checkout/confirmation', { replace: true });
+    }
+
+    function closeActiveOverlay(fallbackSection = null) {
+        if (internalHistoryCount > 0) {
+            internalHistoryCount = Math.max(0, internalHistoryCount - 1);
+            window.history.back();
+        } else {
+            const target = fallbackSection || currentSection || 'home';
+            navigate(target, { replace: true });
+        }
+    }
+
+    function handleModalClose(modalId, closeFn) {
+        if (typeof closeFn === 'function') {
+            try { closeFn(); } catch (e) {}
+        }
+        if (activeOverlayId === modalId) {
+            closeActiveOverlay();
+        }
+    }
+
+    function onRouteEvent() {
+        const currentHash = window.location.hash;
+        if (currentHash === lastKnownHash) return;
+        lastKnownHash = currentHash;
+        const parsed = parseHash(currentHash);
+        applyRoute(parsed, true);
+    }
+
+    function init() {
+        const initialHash = window.location.hash;
+        if (!initialHash || initialHash === '#' || initialHash === '#/') {
+            history.replaceState(null, '', '#/home');
+            lastKnownHash = '#/home';
+            currentSection = 'home';
+        } else {
+            lastKnownHash = initialHash;
+        }
+
+        window.addEventListener('hashchange', onRouteEvent);
+        window.addEventListener('popstate', onRouteEvent);
+        setupGlobalLinkInterception();
+    }
+
+    function handleInitialRoute() {
+        const parsed = parseHash(window.location.hash);
+        if (parsed.target !== 'home' || parsed.type === 'modal' || parsed.type === 'checkout') {
+            applyRoute(parsed);
+        }
+    }
+
+    function setupGlobalLinkInterception() {
+        document.addEventListener('click', (e) => {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+
+            const href = anchor.getAttribute('href');
+            if (!href) return;
+
+            if (href.startsWith('http://') || href.startsWith('https://') || 
+                href.startsWith('mailto:') || href.startsWith('tel:') || 
+                href.startsWith('javascript:') || anchor.getAttribute('target') === '_blank') {
+                return;
+            }
+
+            if (href.startsWith('#')) {
+                e.preventDefault();
+
+                if (anchor.id === 'footer-btn-size-guide') {
+                    navigate('sizeguide');
+                    return;
+                }
+
+                if (href === '#' || href === '#/' || href === '#home') {
+                    navigate('home');
+                    return;
+                }
+
+                const clean = href.replace(/^#\/?/, '').trim();
+                const catFilter = anchor.dataset.categoryFilter;
+
+                if (clean === 'showroom' && catFilter && catFilter !== 'all') {
+                    navigate(`showroom/${catFilter}`);
+                    return;
+                }
+
+                if (activeOverlayId === 'nav-menu') {
+                    if (modalClosers['nav-menu']) {
+                        try { modalClosers['nav-menu'](); } catch (err) {}
+                    }
+                }
+
+                navigate(clean);
+            }
+        });
+    }
+
+    return {
+        init,
+        navigate,
+        navigateToSection,
+        pushModalState,
+        pushCheckoutStep,
+        replaceCheckoutStep,
+        closeActiveOverlay,
+        handleModalClose,
+        registerModalCloser,
+        registerModalOpener,
+        handleInitialRoute,
+        getDepth: () => internalHistoryCount,
+        getCurrentSection: () => currentSection
+    };
+})();
 
 /* ==========================================================================
    3. SHOWROOM, WISHLIST, SEARCH & CART ARCHITECTURE
@@ -860,13 +1182,22 @@ function initializePaveliaCommerce() {
         });
     }
 
+    window.setPaveliaCategoryFilter = function(cat) {
+        activeCategory = cat || 'all';
+        filterTabs.forEach(t => {
+            t.classList.toggle('active', t.dataset.filter === activeCategory);
+        });
+        renderShowroomProducts();
+    };
+
     // Filter Tabs Handler
     filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            filterTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            activeCategory = tab.dataset.filter;
-            renderShowroomProducts();
+            const cat = tab.dataset.filter;
+            window.setPaveliaCategoryFilter(cat);
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.navigateToSection('showroom', { category: cat });
+            }
         });
     });
 
@@ -896,12 +1227,15 @@ function initializePaveliaCommerce() {
         // Attach category filtering click listeners
         gridEl.querySelectorAll('[data-category-filter]').forEach(link => {
             link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const cat = link.dataset.categoryFilter;
-                activeCategory = cat;
-                filterTabs.forEach(t => {
-                    t.classList.toggle('active', t.dataset.filter === cat);
-                });
-                renderShowroomProducts();
+                window.setPaveliaCategoryFilter(cat);
+                if (window.PaveliaRouter) {
+                    window.PaveliaRouter.navigateToSection('showroom', { category: cat, push: true });
+                } else {
+                    const showroom = document.getElementById('showroom');
+                    if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+                }
             });
         });
     }
@@ -1041,6 +1375,7 @@ function initializePaveliaCommerce() {
         if (cartDrawer) {
             cartDrawer.classList.add('active');
             document.body.classList.add('lock-scroll');
+            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('cart');
         }
     }
 
@@ -1052,8 +1387,14 @@ function initializePaveliaCommerce() {
     }
 
     if (cartBtn) cartBtn.addEventListener('click', (e) => { e.preventDefault(); openCartDrawer(); });
-    if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCartDrawer);
-    if (cartOverlay) cartOverlay.addEventListener('click', closeCartDrawer);
+    if (cartCloseBtn) cartCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('cart', closeCartDrawer);
+        else closeCartDrawer();
+    });
+    if (cartOverlay) cartOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('cart', closeCartDrawer);
+        else closeCartDrawer();
+    });
 
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', () => {
@@ -1168,6 +1509,7 @@ function initializePaveliaCommerce() {
             wishlistDrawer.classList.add('active');
             document.body.classList.add('lock-scroll');
             updateWishlistUI();
+            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('wishlist');
         }
     }
 
@@ -1179,8 +1521,14 @@ function initializePaveliaCommerce() {
     }
 
     if (wishlistBtn) wishlistBtn.addEventListener('click', (e) => { e.preventDefault(); openWishlistDrawer(); });
-    if (wishlistCloseBtn) wishlistCloseBtn.addEventListener('click', closeWishlistDrawer);
-    if (wishlistOverlay) wishlistOverlay.addEventListener('click', closeWishlistDrawer);
+    if (wishlistCloseBtn) wishlistCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('wishlist', closeWishlistDrawer);
+        else closeWishlistDrawer();
+    });
+    if (wishlistOverlay) wishlistOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('wishlist', closeWishlistDrawer);
+        else closeWishlistDrawer();
+    });
 
     // -------------------------------------------------------------
     // LIVE INSTANT SEARCH MODAL
@@ -1190,6 +1538,7 @@ function initializePaveliaCommerce() {
             searchModal.classList.add('active');
             document.body.classList.add('lock-scroll');
             setTimeout(() => { if (searchInput) searchInput.focus(); }, 100);
+            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('search');
         }
     }
 
@@ -1257,8 +1606,14 @@ function initializePaveliaCommerce() {
     }
 
     if (searchBtn) searchBtn.addEventListener('click', (e) => { e.preventDefault(); openSearchModal(); });
-    if (searchCloseBtn) searchCloseBtn.addEventListener('click', closeSearchModal);
-    if (searchOverlay) searchOverlay.addEventListener('click', closeSearchModal);
+    if (searchCloseBtn) searchCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('search', closeSearchModal);
+        else closeSearchModal();
+    });
+    if (searchOverlay) searchOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('search', closeSearchModal);
+        else closeSearchModal();
+    });
 
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -1399,6 +1754,7 @@ function initializePaveliaCommerce() {
 
         quickviewModal.classList.add('active');
         document.body.classList.add('lock-scroll');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('quickview', { productId });
     }
 
     function closeQuickview() {
@@ -1408,8 +1764,14 @@ function initializePaveliaCommerce() {
         }
     }
 
-    if (quickviewCloseBtn) quickviewCloseBtn.addEventListener('click', closeQuickview);
-    if (quickviewOverlay) quickviewOverlay.addEventListener('click', closeQuickview);
+    if (quickviewCloseBtn) quickviewCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('quickview', closeQuickview);
+        else closeQuickview();
+    });
+    if (quickviewOverlay) quickviewOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('quickview', closeQuickview);
+        else closeQuickview();
+    });
 
     // -------------------------------------------------------------
     // SIZE GUIDE & APPOINTMENT MODALS
@@ -1418,6 +1780,7 @@ function initializePaveliaCommerce() {
         if (sizeGuideModal) {
             sizeGuideModal.classList.add('active');
             document.body.classList.add('lock-scroll');
+            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('sizeguide');
         }
     }
 
@@ -1431,8 +1794,14 @@ function initializePaveliaCommerce() {
     openSizeGuideBtns.forEach(btn => {
         if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); openSizeGuideModal(); });
     });
-    if (sizeGuideCloseBtn) sizeGuideCloseBtn.addEventListener('click', closeSizeGuideModal);
-    if (sizeGuideOverlay) sizeGuideOverlay.addEventListener('click', closeSizeGuideModal);
+    if (sizeGuideCloseBtn) sizeGuideCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('sizeguide', closeSizeGuideModal);
+        else closeSizeGuideModal();
+    });
+    if (sizeGuideOverlay) sizeGuideOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('sizeguide', closeSizeGuideModal);
+        else closeSizeGuideModal();
+    });
 
     // Size Guide Tabs
     const sgTabs = document.querySelectorAll('.sg-tab');
@@ -1479,6 +1848,18 @@ function initializePaveliaCommerce() {
     };
 
     // Initial Loadings
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('cart', closeCartDrawer);
+        window.PaveliaRouter.registerModalOpener('cart', () => openCartDrawer());
+        window.PaveliaRouter.registerModalCloser('wishlist', closeWishlistDrawer);
+        window.PaveliaRouter.registerModalOpener('wishlist', () => openWishlistDrawer());
+        window.PaveliaRouter.registerModalCloser('search', closeSearchModal);
+        window.PaveliaRouter.registerModalOpener('search', () => openSearchModal());
+        window.PaveliaRouter.registerModalCloser('quickview', closeQuickview);
+        window.PaveliaRouter.registerModalCloser('sizeguide', closeSizeGuideModal);
+        window.PaveliaRouter.registerModalOpener('sizeguide', () => openSizeGuideModal());
+    }
+
     renderShowroomProducts();
     updateCartUI();
     updateWishlistUI();
@@ -1493,11 +1874,13 @@ function initializeNavigation() {
     const closeBtn = document.getElementById('nav-menu-close-btn');
     const navLinks = document.querySelectorAll('.nav-menu-item');
     const exploreBtn = document.getElementById('hero-explore-btn');
+    const brandLogo = document.querySelector('.brand-logo-link');
 
-    const openMenu = () => {
+    const openMenu = (push = true) => {
         if (navOverlay) {
             navOverlay.classList.add('active');
             document.body.classList.add('lock-scroll');
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('nav-menu');
         }
     };
 
@@ -1508,11 +1891,18 @@ function initializeNavigation() {
         }
     };
 
-    if (navToggle) navToggle.addEventListener('click', (e) => { e.preventDefault(); openMenu(); });
-    if (closeBtn) closeBtn.addEventListener('click', (e) => { e.preventDefault(); closeMenu(); });
+    if (navToggle) navToggle.addEventListener('click', (e) => { e.preventDefault(); openMenu(true); });
+    if (closeBtn) closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('nav-menu', closeMenu);
+        else closeMenu();
+    });
     if (navOverlay) {
         navOverlay.addEventListener('click', (e) => {
-            if (e.target === navOverlay) closeMenu();
+            if (e.target === navOverlay) {
+                if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('nav-menu', closeMenu);
+                else closeMenu();
+            }
         });
     }
 
@@ -1520,12 +1910,14 @@ function initializeNavigation() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             closeMenu();
-            const targetId = link.getAttribute('data-target');
-            const section = document.getElementById(targetId);
-            if (section) {
-                setTimeout(() => {
+            const targetId = link.getAttribute('data-target') || 'home';
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.navigateToSection(targetId);
+            } else {
+                const section = document.getElementById(targetId === 'home' ? 'hero-interactive' : targetId);
+                if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 300);
+                }
             }
         });
     });
@@ -1533,9 +1925,29 @@ function initializeNavigation() {
     if (exploreBtn) {
         exploreBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const showroom = document.getElementById('showroom');
-            if (showroom) showroom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.navigateToSection('showroom');
+            } else {
+                const showroom = document.getElementById('showroom');
+                if (showroom) showroom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
+    }
+
+    if (brandLogo) {
+        brandLogo.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.navigateToSection('home');
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
+
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('nav-menu', closeMenu);
+        window.PaveliaRouter.registerModalOpener('nav-menu', () => openMenu(false));
     }
 }
 
@@ -1766,6 +2178,9 @@ function initializeCheckoutFlow() {
             checkoutModal.classList.remove('hidden');
             checkoutModal.classList.add('active');
             document.body.classList.add('lock-scroll');
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.pushCheckoutStep(1);
+            }
         }
     }
 
@@ -1875,6 +2290,9 @@ function initializeCheckoutFlow() {
 
             // Move to Step 2
             setCheckoutStep(2);
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.pushCheckoutStep(2);
+            }
         });
     }
 
@@ -1909,7 +2327,13 @@ function initializeCheckoutFlow() {
     });
 
     if (btnBackToAddress) {
-        btnBackToAddress.addEventListener('click', () => setCheckoutStep(1));
+        btnBackToAddress.addEventListener('click', () => {
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.closeActiveOverlay();
+            } else {
+                setCheckoutStep(1);
+            }
+        });
     }
 
     if (btnTriggerPayment) {
@@ -1923,6 +2347,7 @@ function initializeCheckoutFlow() {
                     if (rzpProcessingState) rzpProcessingState.classList.add('hidden');
                     rzpModal.classList.remove('hidden');
                     rzpModal.classList.add('active');
+                    if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('razorpay');
                 }
             } else {
                 // Cash on Delivery
@@ -2072,6 +2497,9 @@ function initializeCheckoutFlow() {
 
         // Advance to Step 3
         setCheckoutStep(3);
+        if (window.PaveliaRouter) {
+            window.PaveliaRouter.replaceCheckoutStep(3);
+        }
 
         if (typeof window.showPaveliaToast === 'function') {
             window.showPaveliaToast(`✦ Commission ${orderId} confirmed! Our lapidary atelier has received your order.`);
@@ -2082,8 +2510,24 @@ function initializeCheckoutFlow() {
     }
 
     // Modal Close Buttons
-    if (checkoutModalClose) checkoutModalClose.addEventListener('click', closeCheckoutModal);
-    if (btnCheckoutClose) btnCheckoutClose.addEventListener('click', closeCheckoutModal);
+    const handleCheckoutDismiss = () => {
+        if (window.PaveliaRouter) {
+            window.PaveliaRouter.handleModalClose('checkout', closeCheckoutModal);
+        } else {
+            closeCheckoutModal();
+        }
+    };
+    if (checkoutModalClose) checkoutModalClose.addEventListener('click', handleCheckoutDismiss);
+    if (btnCheckoutClose) btnCheckoutClose.addEventListener('click', handleCheckoutDismiss);
+
+    const handleRazorpayDismiss = () => {
+        if (window.PaveliaRouter) {
+            window.PaveliaRouter.handleModalClose('razorpay', closeRazorpayModal);
+        } else {
+            closeRazorpayModal();
+        }
+    };
+    if (rzpModalClose) rzpModalClose.addEventListener('click', handleRazorpayDismiss);
 
     const btnPlacedViewDossier = document.getElementById('btn-placed-view-dossier');
     if (btnPlacedViewDossier) {
@@ -2099,20 +2543,24 @@ function initializeCheckoutFlow() {
     if (btnCheckoutFinish) {
         btnCheckoutFinish.addEventListener('click', () => {
             closeCheckoutModal();
-            const showroom = document.getElementById('showroom');
-            if (showroom) showroom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.navigateToSection('showroom', { push: true });
+            } else {
+                const showroom = document.getElementById('showroom');
+                if (showroom) showroom.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
     }
 
     // Dismiss modals on backdrop click
     if (checkoutModal) {
         checkoutModal.addEventListener('click', (e) => {
-            if (e.target === checkoutModal) closeCheckoutModal();
+            if (e.target === checkoutModal) handleCheckoutDismiss();
         });
     }
     if (rzpModal) {
         rzpModal.addEventListener('click', (e) => {
-            if (e.target === rzpModal) closeRazorpayModal();
+            if (e.target === rzpModal) handleRazorpayDismiss();
         });
     }
 
@@ -2120,15 +2568,21 @@ function initializeCheckoutFlow() {
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (rzpModal && rzpModal.classList.contains('active')) {
-                closeRazorpayModal();
+                handleRazorpayDismiss();
             } else if (checkoutModal && checkoutModal.classList.contains('active')) {
-                closeCheckoutModal();
+                handleCheckoutDismiss();
             }
         }
     });
 
     // Expose openCheckoutModal globally
     window.openCheckoutModal = openCheckoutModal;
+    window.setPaveliaCheckoutStep = setCheckoutStep;
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('checkout', closeCheckoutModal);
+        window.PaveliaRouter.registerModalOpener('checkout', () => openCheckoutModal(null, false, false));
+        window.PaveliaRouter.registerModalCloser('razorpay', closeRazorpayModal);
+    }
 }
 
 /* ==========================================================================
@@ -2434,6 +2888,7 @@ function initializeAdminDashboard() {
         if (formProductStatus) formProductStatus.value = 'IN STOCK';
         if (formProductInventory) formProductInventory.value = '8 pcs';
         productModal.classList.remove('hidden');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-product');
     }
 
     function openEditProductModal(productId) {
@@ -2459,11 +2914,21 @@ function initializeAdminDashboard() {
         if (formProductImage2) formProductImage2.value = imagesList[1] || '';
 
         productModal.classList.remove('hidden');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-product');
     }
 
     function closeProductModal() {
         if (productModal) productModal.classList.add('hidden');
     }
+
+    if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-product', closeProductModal);
+        else closeProductModal();
+    });
+    if (productCancelBtn) productCancelBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-product', closeProductModal);
+        else closeProductModal();
+    });
 
     function handleProductFormSubmit(e) {
         e.preventDefault();
@@ -2957,6 +3422,7 @@ function initializeAdminDashboard() {
         }
 
         orderModal.classList.remove('hidden');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-order');
     }
 
     function closeAdminOrderModal() {
@@ -2972,7 +3438,6 @@ function initializeAdminDashboard() {
             renderAdminOrdersTable();
             const showToastFn = window.showPaveliaToast || alert;
             showToastFn(`✦ Commission ${orderId} updated to: ${newStatus}`);
-            // Fire event so customer order history also updates
             window.dispatchEvent(new CustomEvent('pavelia_order_status_updated', { detail: { orderId, status: newStatus } }));
         }
     }
@@ -2989,7 +3454,10 @@ function initializeAdminDashboard() {
         });
     }
 
-    if (orderModalCloseBtn) orderModalCloseBtn.addEventListener('click', closeAdminOrderModal);
+    if (orderModalCloseBtn) orderModalCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-order', closeAdminOrderModal);
+        else closeAdminOrderModal();
+    });
 
     const btnAdminPrintManifest = document.getElementById('btn-admin-print-manifest');
     if (btnAdminPrintManifest) {
@@ -3152,6 +3620,7 @@ function initializeAdminDashboard() {
         }
         if (collectionModalTitle) collectionModalTitle.textContent = 'ADD NEW CURATED COLLECTION';
         collectionModal.classList.remove('hidden');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-collection');
     }
 
     function openEditCollectionModal(collectionId) {
@@ -3179,6 +3648,7 @@ function initializeAdminDashboard() {
 
         if (collectionModalTitle) collectionModalTitle.textContent = `EDIT CURATED COLLECTION: ${col.name}`;
         collectionModal.classList.remove('hidden');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-collection');
     }
 
     function closeCollectionModal() {
@@ -3295,22 +3765,36 @@ function initializeAdminDashboard() {
     // Collections Event Listeners
     if (btnOpenAddCollection) btnOpenAddCollection.addEventListener('click', openAddCollectionModal);
     if (btnResetCollections) btnResetCollections.addEventListener('click', handleResetCollections);
-    if (collectionModalCloseBtn) collectionModalCloseBtn.addEventListener('click', closeCollectionModal);
-    if (collectionCancelBtn) collectionCancelBtn.addEventListener('click', closeCollectionModal);
+    if (collectionModalCloseBtn) collectionModalCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-collection', closeCollectionModal);
+        else closeCollectionModal();
+    });
+    if (collectionCancelBtn) collectionCancelBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-collection', closeCollectionModal);
+        else closeCollectionModal();
+    });
     if (collectionForm) collectionForm.addEventListener('submit', handleCollectionFormSubmit);
     if (adminCollectionsSearch) adminCollectionsSearch.addEventListener('input', renderAdminCollectionsTable);
 
     if (collectionModal) {
         collectionModal.addEventListener('click', (e) => {
-            if (e.target === collectionModal) closeCollectionModal();
+            if (e.target === collectionModal) {
+                if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-collection', closeCollectionModal);
+                else closeCollectionModal();
+            }
         });
     }
     
     if (btnPreviewStorefront) {
         btnPreviewStorefront.addEventListener('click', () => {
-            window.closeAdminFullview(true);
-            const showroom = document.getElementById('showroom');
-            if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.handleModalClose('admin', () => window.closeAdminFullview(true));
+                window.PaveliaRouter.navigateToSection('showroom', { push: true });
+            } else {
+                window.closeAdminFullview(true);
+                const showroom = document.getElementById('showroom');
+                if (showroom) showroom.scrollIntoView({ behavior: 'smooth' });
+            }
         });
     }
 
@@ -3318,6 +3802,14 @@ function initializeAdminDashboard() {
         floatingReturnBtn.addEventListener('click', () => {
             window.openAdminFullview();
         });
+    }
+
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('admin', () => window.closeAdminFullview(false));
+        window.PaveliaRouter.registerModalOpener('admin', () => window.openAdminFullview(false));
+        window.PaveliaRouter.registerModalCloser('admin-product', closeProductModal);
+        window.PaveliaRouter.registerModalCloser('admin-order', closeAdminOrderModal);
+        window.PaveliaRouter.registerModalCloser('admin-collection', closeCollectionModal);
     }
 
     if (btnTopLogout) {
@@ -3471,6 +3963,7 @@ function initializeAuth() {
         if (authModal) {
             authModal.classList.add('active');
             document.body.classList.add('lock-scroll');
+            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('auth');
             const authContainer = document.querySelector('.auth-container');
 
             if (userToken) {
@@ -3518,8 +4011,14 @@ function initializeAuth() {
             openAuthModal();
         });
     }
-    if (authCloseBtn) authCloseBtn.addEventListener('click', closeAuthModal);
-    if (authOverlay) authOverlay.addEventListener('click', closeAuthModal);
+    if (authCloseBtn) authCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('auth', closeAuthModal);
+        else closeAuthModal();
+    });
+    if (authOverlay) authOverlay.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('auth', closeAuthModal);
+        else closeAuthModal();
+    });
 
     // Escape key closes modal
     document.addEventListener('keydown', (e) => {
@@ -3674,6 +4173,7 @@ function initializeAuth() {
 
         custOrderDossierModal.classList.remove('hidden');
         document.body.classList.add('lock-scroll');
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('cust-dossier');
     };
 
     const closeCustomerOrderDossier = () => {
@@ -3683,10 +4183,16 @@ function initializeAuth() {
         }
     };
 
-    if (custOrderDossierClose) custOrderDossierClose.addEventListener('click', closeCustomerOrderDossier);
+    if (custOrderDossierClose) custOrderDossierClose.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('cust-dossier', closeCustomerOrderDossier);
+        else closeCustomerOrderDossier();
+    });
     if (custOrderDossierModal) {
         custOrderDossierModal.addEventListener('click', (e) => {
-            if (e.target === custOrderDossierModal) closeCustomerOrderDossier();
+            if (e.target === custOrderDossierModal) {
+                if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('cust-dossier', closeCustomerOrderDossier);
+                else closeCustomerOrderDossier();
+            }
         });
     }
     if (custDossierBtnPrint) {
@@ -4131,6 +4637,12 @@ function initializeAuth() {
         });
     }
 
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('auth', closeAuthModal);
+        window.PaveliaRouter.registerModalOpener('auth', () => openAuthModal('signin'));
+        window.PaveliaRouter.registerModalCloser('cust-dossier', closeCustomerOrderDossier);
+    }
+
     verifySession();
 }
 
@@ -4139,6 +4651,9 @@ function initializeAuth() {
    ========================================================================== */
 function initApp() {
     runClassicPreloader();
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.init();
+    }
     initializePaveliaCommerce();
     initializeNavigation();
     initializeCheckoutFlow();
