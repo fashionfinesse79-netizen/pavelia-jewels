@@ -778,15 +778,28 @@ window.PaveliaRouter = (function() {
                 const savedHash = modalReturnState.hash;
                 modalReturnState = null;
 
+                const targetHash = (savedSec && savedSec !== 'home')
+                    ? ('#/' + (savedSec === 'bespoke-section' ? 'bespoke' : savedSec))
+                    : savedHash;
+
                 if (parsed.target === 'home' && savedSec !== 'home') {
-                    history.replaceState(null, '', savedHash);
-                    lastKnownHash = savedHash;
+                    history.replaceState(null, '', targetHash);
+                    lastKnownHash = targetHash;
                     currentSection = savedSec;
                 } else if (parsed.type === 'section') {
                     currentSection = parsed.target;
                 }
 
+                // Restore scroll position reliably across frames and DOM reflow
                 window.scrollTo({ top: savedY, behavior: 'instant' });
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(() => {
+                        window.scrollTo({ top: savedY, behavior: 'instant' });
+                    });
+                }
+                setTimeout(() => {
+                    window.scrollTo({ top: savedY, behavior: 'instant' });
+                }, 30);
                 return;
             }
 
@@ -865,17 +878,38 @@ window.PaveliaRouter = (function() {
         navigate(route, { replace });
     }
 
+    function isOverlayRoute(h) {
+        if (!h) return true;
+        const clean = h.replace(/^#\/?/, '').trim().toLowerCase();
+        return clean.startsWith('product') || clean.startsWith('checkout') ||
+               clean.startsWith('cart') || clean.startsWith('wishlist') ||
+               clean.startsWith('search') || clean.startsWith('sizeguide') ||
+               clean.startsWith('auth') || clean.startsWith('admin') ||
+               clean.startsWith('cust-dossier') || clean.startsWith('nav-menu') ||
+               clean === 'home' || clean === '';
+    }
+
     function pushModalState(modalId, payload = {}) {
+        const currentScrollY = window.scrollY || window.pageYOffset || 0;
         const activeSec = getActiveSectionFromViewport();
-        const baseHash = (window.location.hash && !window.location.hash.startsWith('#/product') && !window.location.hash.startsWith('#/checkout') && !window.location.hash.startsWith('#/cart'))
+        const secHash = '#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec);
+
+        if (window.location.hash === '#/home' || !window.location.hash || window.location.hash === '#') {
+            if (activeSec !== 'home') {
+                history.replaceState(null, '', secHash);
+                lastKnownHash = secHash;
+            }
+        }
+
+        const baseHash = (!isOverlayRoute(window.location.hash))
             ? window.location.hash
-            : ('#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec));
+            : secHash;
 
         modalReturnState = {
             modalId: modalId,
             section: activeSec,
             hash: baseHash,
-            scrollY: window.scrollY || window.pageYOffset || 0
+            scrollY: currentScrollY
         };
         currentSection = activeSec;
 
@@ -890,16 +924,26 @@ window.PaveliaRouter = (function() {
 
     function pushCheckoutStep(stepNumber) {
         if (!modalReturnState) {
+            const currentScrollY = window.scrollY || window.pageYOffset || 0;
             const activeSec = getActiveSectionFromViewport();
-            const baseHash = (window.location.hash && !window.location.hash.startsWith('#/checkout') && !window.location.hash.startsWith('#/product'))
+            const secHash = '#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec);
+
+            if (window.location.hash === '#/home' || !window.location.hash || window.location.hash === '#') {
+                if (activeSec !== 'home') {
+                    history.replaceState(null, '', secHash);
+                    lastKnownHash = secHash;
+                }
+            }
+
+            const baseHash = (!isOverlayRoute(window.location.hash))
                 ? window.location.hash
-                : ('#/' + (activeSec === 'bespoke-section' ? 'bespoke' : activeSec));
+                : secHash;
 
             modalReturnState = {
                 modalId: 'checkout',
                 section: activeSec,
                 hash: baseHash,
-                scrollY: window.scrollY || window.pageYOffset || 0
+                scrollY: currentScrollY
             };
             currentSection = activeSec;
         }
@@ -999,7 +1043,7 @@ window.PaveliaRouter = (function() {
                 }
 
                 if (href === '#' || href === '#/' || href === '#home') {
-                    navigate('home');
+                    navigateToSection('home');
                     return;
                 }
 
@@ -1007,7 +1051,7 @@ window.PaveliaRouter = (function() {
                 const catFilter = anchor.dataset.categoryFilter;
 
                 if (clean === 'showroom' && catFilter && catFilter !== 'all') {
-                    navigate(`showroom/${catFilter}`);
+                    navigateToSection('showroom', { category: catFilter });
                     return;
                 }
 
@@ -1018,11 +1062,11 @@ window.PaveliaRouter = (function() {
                     activeOverlayId = null;
                     modalReturnState = null;
                     document.body.classList.remove('lock-scroll');
-                    navigate(clean, { replace: true });
+                    navigateToSection(clean, { replace: true });
                     return;
                 }
 
-                navigate(clean);
+                navigateToSection(clean);
             }
         });
     }
@@ -1469,11 +1513,11 @@ function initializePaveliaCommerce() {
         showToast(`Added "${product.name}" to your Atelier Bag.`);
     }
 
-    function openCartDrawer() {
+    function openCartDrawer(push = true) {
         if (cartDrawer) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('cart');
             cartDrawer.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('cart');
         }
     }
 
@@ -1602,12 +1646,12 @@ function initializePaveliaCommerce() {
         renderShowroomProducts();
     }
 
-    function openWishlistDrawer() {
+    function openWishlistDrawer(push = true) {
         if (wishlistDrawer) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('wishlist');
             wishlistDrawer.classList.add('active');
             document.body.classList.add('lock-scroll');
             updateWishlistUI();
-            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('wishlist');
         }
     }
 
@@ -1631,12 +1675,12 @@ function initializePaveliaCommerce() {
     // -------------------------------------------------------------
     // LIVE INSTANT SEARCH MODAL
     // -------------------------------------------------------------
-    function openSearchModal() {
+    function openSearchModal(push = true) {
         if (searchModal) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('search');
             searchModal.classList.add('active');
             document.body.classList.add('lock-scroll');
             setTimeout(() => { if (searchInput) searchInput.focus(); }, 100);
-            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('search');
         }
     }
 
@@ -1739,7 +1783,7 @@ function initializePaveliaCommerce() {
     // -------------------------------------------------------------
     // PRODUCT QUICK VIEW MODAL
     // -------------------------------------------------------------
-    function openQuickview(productId) {
+    function openQuickview(productId, push = true) {
         const catalog = getPaveliaCatalog();
         const product = catalog.find(p => p.id === productId);
         if (!product || !quickviewModal || !quickviewContent) return;
@@ -1850,9 +1894,9 @@ function initializePaveliaCommerce() {
             });
         }
 
+        if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('quickview', { productId });
         quickviewModal.classList.add('active');
         document.body.classList.add('lock-scroll');
-        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('quickview', { productId });
     }
 
     function closeQuickview() {
@@ -1874,11 +1918,11 @@ function initializePaveliaCommerce() {
     // -------------------------------------------------------------
     // SIZE GUIDE & APPOINTMENT MODALS
     // -------------------------------------------------------------
-    function openSizeGuideModal() {
+    function openSizeGuideModal(push = true) {
         if (sizeGuideModal) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('sizeguide');
             sizeGuideModal.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('sizeguide');
         }
     }
 
@@ -1948,14 +1992,14 @@ function initializePaveliaCommerce() {
     // Initial Loadings
     if (window.PaveliaRouter) {
         window.PaveliaRouter.registerModalCloser('cart', closeCartDrawer);
-        window.PaveliaRouter.registerModalOpener('cart', () => openCartDrawer());
+        window.PaveliaRouter.registerModalOpener('cart', () => openCartDrawer(false));
         window.PaveliaRouter.registerModalCloser('wishlist', closeWishlistDrawer);
-        window.PaveliaRouter.registerModalOpener('wishlist', () => openWishlistDrawer());
+        window.PaveliaRouter.registerModalOpener('wishlist', () => openWishlistDrawer(false));
         window.PaveliaRouter.registerModalCloser('search', closeSearchModal);
-        window.PaveliaRouter.registerModalOpener('search', () => openSearchModal());
+        window.PaveliaRouter.registerModalOpener('search', () => openSearchModal(false));
         window.PaveliaRouter.registerModalCloser('quickview', closeQuickview);
         window.PaveliaRouter.registerModalCloser('sizeguide', closeSizeGuideModal);
-        window.PaveliaRouter.registerModalOpener('sizeguide', () => openSizeGuideModal());
+        window.PaveliaRouter.registerModalOpener('sizeguide', () => openSizeGuideModal(false));
     }
 
     renderShowroomProducts();
@@ -1976,9 +2020,9 @@ function initializeNavigation() {
 
     const openMenu = (push = true) => {
         if (navOverlay) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('nav-menu');
             navOverlay.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('nav-menu');
         }
     };
 
@@ -2213,12 +2257,16 @@ function initializeCheckoutFlow() {
     }
 
     // Main Open Checkout Function
-    function openCheckoutModal(items, isInstant = false) {
+    function openCheckoutModal(items, isInstant = false, push = true) {
         if (!items || items.length === 0) {
-            if (typeof window.showPaveliaToast === 'function') {
-                window.showPaveliaToast('Please select a fine creation to begin checkout.');
+            if (currentCheckoutItems && currentCheckoutItems.length > 0) {
+                items = currentCheckoutItems;
+            } else {
+                if (typeof window.showPaveliaToast === 'function') {
+                    window.showPaveliaToast('Please select a fine creation to begin checkout.');
+                }
+                return;
             }
-            return;
         }
 
         currentCheckoutItems = Array.isArray(items) ? JSON.parse(JSON.stringify(items)) : [items];
@@ -2273,12 +2321,12 @@ function initializeCheckoutFlow() {
 
         // Show Modal
         if (checkoutModal) {
+            if (push && window.PaveliaRouter) {
+                window.PaveliaRouter.pushCheckoutStep(1);
+            }
             checkoutModal.classList.remove('hidden');
             checkoutModal.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (window.PaveliaRouter) {
-                window.PaveliaRouter.pushCheckoutStep(1);
-            }
         }
     }
 
@@ -2780,7 +2828,8 @@ function initializeAdminDashboard() {
     const dossierStatusForm = document.getElementById('dossier-status-form');
     const dossierStatusSelect = document.getElementById('dossier-status-select');
 
-    window.openAdminFullview = () => {
+    window.openAdminFullview = (push = true) => {
+        if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin');
         if (adminDashboard) {
             adminDashboard.classList.remove('hidden');
             document.body.classList.add('lock-scroll');
@@ -4049,19 +4098,19 @@ function initializeAuth() {
         if (el) el.addEventListener('input', () => { if (signupError) signupError.textContent = ''; });
     });
 
-    const openAuthModal = (targetTab) => {
+    const openAuthModal = (targetTab = 'signin', push = true) => {
         const cachedUser = JSON.parse(localStorage.getItem('pavelia_user_profile') || 'null');
         if (userToken && isAdmin(cachedUser)) {
             if (typeof window.openAdminFullview === 'function') {
-                window.openAdminFullview();
+                window.openAdminFullview(push);
                 return;
             }
         }
 
         if (authModal) {
+            if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('auth');
             authModal.classList.add('active');
             document.body.classList.add('lock-scroll');
-            if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('auth');
             const authContainer = document.querySelector('.auth-container');
 
             if (userToken) {
@@ -4177,7 +4226,7 @@ function initializeAuth() {
     const custDossierBtnWa = document.getElementById('cust-dossier-btn-wa');
     const custDossierBtnPrint = document.getElementById('cust-dossier-btn-print');
 
-    const openCustomerOrderDossier = (orderId) => {
+    const openCustomerOrderDossier = (orderId, push = true) => {
         if (!custOrderDossierModal) return;
         const allOrders = JSON.parse(localStorage.getItem('pavelia_orders') || '[]');
         let order = allOrders.find(o => o.orderId === orderId);
@@ -4269,9 +4318,9 @@ function initializeAuth() {
             custDossierBtnWa.href = `https://wa.me/919999999999?text=${encodeURIComponent(waMsg)}`;
         }
 
+        if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('cust-dossier', { orderId: order.orderId });
         custOrderDossierModal.classList.remove('hidden');
         document.body.classList.add('lock-scroll');
-        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('cust-dossier');
     };
 
     const closeCustomerOrderDossier = () => {
@@ -4737,7 +4786,7 @@ function initializeAuth() {
 
     if (window.PaveliaRouter) {
         window.PaveliaRouter.registerModalCloser('auth', closeAuthModal);
-        window.PaveliaRouter.registerModalOpener('auth', () => openAuthModal('signin'));
+        window.PaveliaRouter.registerModalOpener('auth', () => openAuthModal('signin', false));
         window.PaveliaRouter.registerModalCloser('cust-dossier', closeCustomerOrderDossier);
     }
 

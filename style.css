@@ -79,7 +79,6 @@ body {
 
 body.lock-scroll {
     overflow: hidden !important;
-    height: 100vh !important;
 }
 
 a {
