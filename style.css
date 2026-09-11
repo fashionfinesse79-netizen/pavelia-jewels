@@ -384,34 +384,39 @@ img {
 }
 
 .brand-name-main {
-    font-family: var(--font-serif-royal, 'Cinzel', Georgia, serif);
-    font-size: 1.45rem;
-    font-weight: 600;
-    letter-spacing: 0.26em;
-    text-indent: 0.26em;
-    color: var(--color-gold-dark, #8F7249);
+    font-family: 'Playfair Display', 'Cormorant Garamond', 'Cinzel', Georgia, serif;
+    font-size: 1.62rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    color: #111111;
     text-transform: uppercase;
     display: block;
-    line-height: 1.1;
-    text-shadow: 0 1px 2px rgba(143, 114, 73, 0.15);
+    line-height: 1.05;
+    transition: color var(--transition-fast);
 }
 
 .brand-name-sub {
     font-family: var(--font-sans, 'Montserrat', sans-serif);
-    font-size: 0.64rem;
+    font-size: 0.58rem;
     font-weight: 500;
-    letter-spacing: 0.52em;
-    text-indent: 0.52em;
-    color: var(--color-gold-dark, #8F7249);
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    color: #1e1e1e;
     text-transform: uppercase;
     display: block;
-    margin-top: 3px;
+    margin-top: 6px;
     opacity: 0.92;
+    transition: color var(--transition-fast);
 }
 
 .brand-logo-link:hover .header-brand-text {
-    transform: scale(1.03);
-    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.brand-logo-link:hover .brand-name-main,
+.brand-logo-link:hover .brand-name-sub {
+    color: var(--color-gold-dark, #8F7249);
 }
 
 /* User Welcome State in Header */
@@ -3739,15 +3744,16 @@ img {
     }
 
     .brand-name-main {
-        font-size: 1.15rem;
-        letter-spacing: 0.18em;
-        text-indent: 0.18em;
+        font-size: 1.25rem;
+        letter-spacing: 0.22em;
+        text-indent: 0.22em;
     }
 
     .brand-name-sub {
-        font-size: 0.54rem;
-        letter-spacing: 0.36em;
-        text-indent: 0.36em;
+        font-size: 0.50rem;
+        letter-spacing: 0.28em;
+        text-indent: 0.28em;
+        margin-top: 4px;
     }
 
     .hero-section {
