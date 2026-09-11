@@ -362,6 +362,7 @@ function runClassicPreloader() {
         document.body.classList.remove('lock-scroll');
         initDOMParallax();
         initCarousel();
+        initHeroSlider();
         return;
     }
 
@@ -401,6 +402,7 @@ function runClassicPreloader() {
                 document.body.classList.remove('lock-scroll');
                 initDOMParallax();
                 initCarousel();
+                initHeroSlider();
                 if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
                     window.PaveliaRouter.handleInitialRoute();
                 }
@@ -523,6 +525,293 @@ function runClassicPreloader() {
         startAutoSlide();
     }
 }
+
+/* ==========================================================================
+   2.1 HOMEPAGE DYNAMIC LUXURY HERO SLIDER STORAGE & ENGINE
+   ========================================================================== */
+const DEFAULT_HERO_SLIDES = [
+    {
+        id: 'hero-slide-1',
+        title: 'The Haute Solitaire Parure',
+        subtitle: 'Hand-faceted solitaire necklace & royal diamond studs on fluid champagne silk',
+        image: 'assets/images/luxury_jewelry_hero.jpg?v=3.5',
+        active: true,
+        order: 0
+    },
+    {
+        id: 'hero-slide-2',
+        title: 'Celestial Gold & Brilliant Solitaires',
+        subtitle: '18K Yellow Gold vermeil & exquisite pavé-set masterworks',
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1920&auto=format&fit=crop',
+        active: true,
+        order: 1
+    },
+    {
+        id: 'hero-slide-3',
+        title: 'Crown Heritage Solitaire Rings',
+        subtitle: 'Architectural eternity bands and hand-faceted emerald stones',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1920&auto=format&fit=crop',
+        active: true,
+        order: 2
+    },
+    {
+        id: 'hero-slide-4',
+        title: "L'Étoile Diamond Chandelier Drops",
+        subtitle: '950 Solid Platinum drop earrings calibrated for evening radiance',
+        image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=1920&auto=format&fit=crop',
+        active: true,
+        order: 3
+    }
+];
+
+function getPaveliaHeroSlides() {
+    try {
+        const stored = localStorage.getItem('pavelia_hero_slides');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            }
+        }
+    } catch (e) {
+        console.warn('Pavelia hero slides storage notice:', e);
+    }
+    return DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
+}
+
+function savePaveliaHeroSlides(slides) {
+    try {
+        localStorage.setItem('pavelia_hero_slides', JSON.stringify(slides));
+    } catch (e) {
+        console.error('Error persisting Pavelia hero slides:', e);
+    }
+}
+
+window.getPaveliaHeroSlides = getPaveliaHeroSlides;
+window.savePaveliaHeroSlides = savePaveliaHeroSlides;
+
+let globalHeroSliderState = {
+    currentIndex: 0,
+    intervalId: null,
+    isTransitioning: false,
+    activeSlides: []
+};
+
+function initHeroSlider() {
+    const track = document.getElementById('hero-slider-track');
+    const prevBtn = document.getElementById('hero-slider-prev');
+    const nextBtn = document.getElementById('hero-slider-next');
+    const indicatorsContainer = document.getElementById('hero-slider-indicators');
+    const heroSection = document.getElementById('hero-interactive');
+
+    if (!track) return;
+
+    // Clear existing interval
+    if (globalHeroSliderState.intervalId) {
+        clearInterval(globalHeroSliderState.intervalId);
+        globalHeroSliderState.intervalId = null;
+    }
+
+    const allSlides = getPaveliaHeroSlides();
+    let activeSlides = allSlides.filter(s => s.active !== false);
+
+    if (activeSlides.length === 0 && DEFAULT_HERO_SLIDES.length > 0) {
+        activeSlides = [DEFAULT_HERO_SLIDES[0]];
+    }
+
+    globalHeroSliderState.activeSlides = activeSlides;
+    globalHeroSliderState.isTransitioning = false;
+
+    if (globalHeroSliderState.currentIndex >= activeSlides.length) {
+        globalHeroSliderState.currentIndex = 0;
+    }
+    const currentIndex = globalHeroSliderState.currentIndex;
+
+    // Render background slides
+    track.innerHTML = activeSlides.map((slide, idx) => {
+        const isActive = idx === currentIndex;
+        return `
+            <div class="hero-slide ${isActive ? 'active' : ''}" data-slide-index="${idx}" data-slide-id="${slide.id || ''}">
+                <img src="${slide.image}" alt="${slide.title || 'PAVELIA Haute Creation'}" class="hero-bg-img hero-slide-img" loading="${idx === 0 ? 'eager' : 'lazy'}">
+            </div>
+        `;
+    }).join('');
+
+    // Render indicators
+    if (indicatorsContainer) {
+        if (activeSlides.length > 1) {
+            indicatorsContainer.style.display = 'flex';
+            indicatorsContainer.innerHTML = activeSlides.map((slide, idx) => {
+                const isActive = idx === currentIndex;
+                return `
+                    <button type="button" class="hero-indicator-dot ${isActive ? 'active' : ''}" data-slide-index="${idx}" aria-label="Go to Slide ${idx + 1}: ${slide.title || ''}" role="tab" aria-selected="${isActive ? 'true' : 'false'}"></button>
+                `;
+            }).join('');
+
+            indicatorsContainer.querySelectorAll('.hero-indicator-dot').forEach(dot => {
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const targetIdx = parseInt(dot.dataset.slideIndex, 10);
+                    if (!isNaN(targetIdx) && targetIdx !== globalHeroSliderState.currentIndex) {
+                        const direction = targetIdx > globalHeroSliderState.currentIndex ? 'next' : 'prev';
+                        goToSlide(targetIdx, direction);
+                        resetAutoAdvance();
+                    }
+                });
+            });
+        } else {
+            indicatorsContainer.style.display = 'none';
+        }
+    }
+
+    // Toggle navigation arrows visibility
+    if (prevBtn && nextBtn) {
+        if (activeSlides.length <= 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+        }
+    }
+
+    const slideElements = Array.from(track.querySelectorAll('.hero-slide'));
+    const indicatorDots = indicatorsContainer ? Array.from(indicatorsContainer.querySelectorAll('.hero-indicator-dot')) : [];
+
+    function goToSlide(targetIdx, direction = 'next') {
+        if (globalHeroSliderState.isTransitioning || slideElements.length <= 1) return;
+
+        let normalizedIdx = targetIdx;
+        if (normalizedIdx < 0) normalizedIdx = slideElements.length - 1;
+        if (normalizedIdx >= slideElements.length) normalizedIdx = 0;
+
+        if (normalizedIdx === globalHeroSliderState.currentIndex) return;
+
+        globalHeroSliderState.isTransitioning = true;
+        const currentSlide = slideElements[globalHeroSliderState.currentIndex];
+        const nextSlide = slideElements[normalizedIdx];
+
+        if (direction === 'next') {
+            currentSlide.classList.add('slide-out-left');
+            nextSlide.classList.add('slide-in-right', 'active');
+        } else {
+            currentSlide.classList.add('slide-out-right');
+            nextSlide.classList.add('slide-in-left', 'active');
+        }
+
+        indicatorDots.forEach((dot, i) => {
+            const isTarget = i === normalizedIdx;
+            dot.classList.toggle('active', isTarget);
+            dot.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+        });
+
+        globalHeroSliderState.currentIndex = normalizedIdx;
+
+        setTimeout(() => {
+            slideElements.forEach((s, i) => {
+                s.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+                s.classList.toggle('active', i === normalizedIdx);
+            });
+            globalHeroSliderState.isTransitioning = false;
+        }, 1300);
+    }
+
+    function autoAdvance() {
+        if (slideElements.length > 1 && !globalHeroSliderState.isTransitioning) {
+            goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+        }
+    }
+
+    function startAutoAdvance() {
+        if (globalHeroSliderState.intervalId) clearInterval(globalHeroSliderState.intervalId);
+        if (slideElements.length > 1) {
+            globalHeroSliderState.intervalId = setInterval(autoAdvance, 5500);
+        }
+    }
+
+    function stopAutoAdvance() {
+        if (globalHeroSliderState.intervalId) {
+            clearInterval(globalHeroSliderState.intervalId);
+            globalHeroSliderState.intervalId = null;
+        }
+    }
+
+    function resetAutoAdvance() {
+        stopAutoAdvance();
+        startAutoAdvance();
+    }
+
+    if (prevBtn && prevBtn.dataset.bound !== 'true') {
+        prevBtn.dataset.bound = 'true';
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+            resetAutoAdvance();
+        });
+    }
+
+    if (nextBtn && nextBtn.dataset.bound !== 'true') {
+        nextBtn.dataset.bound = 'true';
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+            resetAutoAdvance();
+        });
+    }
+
+    if (heroSection && heroSection.dataset.hoverBound !== 'true') {
+        heroSection.dataset.hoverBound = 'true';
+        heroSection.addEventListener('mouseenter', stopAutoAdvance);
+        heroSection.addEventListener('mouseleave', startAutoAdvance);
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        heroSection.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches[0]) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        heroSection.addEventListener('touchend', (e) => {
+            if (e.changedTouches && e.changedTouches[0]) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                const diffY = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+                    if (diffX < 0) {
+                        goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+                    } else {
+                        goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+                    }
+                    resetAutoAdvance();
+                }
+            }
+        }, { passive: true });
+    }
+
+    if (!window._heroKeyBound) {
+        window._heroKeyBound = true;
+        window.addEventListener('keydown', (e) => {
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) return;
+            if (document.querySelector('.admin-modal-backdrop:not(.hidden)') || document.querySelector('.auth-modal-backdrop:not(.hidden)')) return;
+
+            if (window.scrollY < window.innerHeight * 0.7) {
+                if (e.key === 'ArrowLeft') {
+                    goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+                    resetAutoAdvance();
+                } else if (e.key === 'ArrowRight') {
+                    goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+                    resetAutoAdvance();
+                }
+            }
+        });
+    }
+
+    startAutoAdvance();
+}
+
+window.initHeroSlider = initHeroSlider;
 
 /* ==========================================================================
    2. DYNAMIC CATALOG STORAGE & DATA ACCESS LAYER
@@ -2745,12 +3034,15 @@ function initializeAdminDashboard() {
     const adminTabBtnProducts = document.getElementById('admin-tab-btn-products');
     const adminTabBtnOrders = document.getElementById('admin-tab-btn-orders');
     const adminTabBtnCollections = document.getElementById('admin-tab-btn-collections');
+    const adminTabBtnHeroSlider = document.getElementById('admin-tab-btn-hero-slider');
     const adminTabProdCount = document.getElementById('admin-tab-prod-count');
     const adminTabOrdersCount = document.getElementById('admin-tab-orders-count');
     const adminTabCollectionsCount = document.getElementById('admin-tab-collections-count');
+    const adminTabHeroCount = document.getElementById('admin-tab-hero-count');
     const adminPanelProducts = document.getElementById('admin-panel-products');
     const adminPanelOrders = document.getElementById('admin-panel-orders');
     const adminPanelCollections = document.getElementById('admin-panel-collections');
+    const adminPanelHeroSlider = document.getElementById('admin-panel-hero-slider');
     
     // Products Table Elements
     const adminProductSearch = document.getElementById('admin-product-search');
@@ -2772,6 +3064,16 @@ function initializeAdminDashboard() {
     const btnOpenAddCollection = document.getElementById('btn-admin-open-add-collection');
     const btnResetCollections = document.getElementById('btn-admin-reset-collections');
     const adminCollectionsTbody = document.getElementById('admin-collections-tbody');
+
+    // Hero Slider Table & Stats Elements
+    const adminStatHeroTotal = document.getElementById('admin-stat-hero-total');
+    const adminStatHeroActive = document.getElementById('admin-stat-hero-active');
+    const adminStatHeroSpeed = document.getElementById('admin-stat-hero-speed');
+    const adminHeroSearch = document.getElementById('admin-hero-search');
+    const btnOpenAddSlide = document.getElementById('btn-admin-open-add-slide');
+    const btnResetHeroSlides = document.getElementById('btn-admin-reset-hero-slides');
+    const btnPreviewHeroStorefront = document.getElementById('btn-admin-preview-hero-storefront');
+    const adminHeroSlidesTbody = document.getElementById('admin-hero-slides-tbody');
     
     // Product Modal Elements
     const productModal = document.getElementById('admin-product-modal');
@@ -2809,6 +3111,22 @@ function initializeAdminDashboard() {
     const formCollectionImage = document.getElementById('form-collection-image');
     const formCollectionImagePreview = document.getElementById('form-collection-image-preview');
 
+    // Hero Slide Modal Elements
+    const heroSlideModal = document.getElementById('admin-hero-slide-modal');
+    const heroSlideModalTitle = document.getElementById('admin-hero-slide-modal-title');
+    const heroSlideModalCloseBtn = document.getElementById('admin-hero-slide-modal-close');
+    const heroSlideCancelBtn = document.getElementById('btn-admin-hero-slide-cancel');
+    const heroSlideForm = document.getElementById('admin-hero-slide-form');
+    const formHeroSlideId = document.getElementById('form-hero-slide-id');
+    const formHeroSlideTitle = document.getElementById('form-hero-slide-title');
+    const formHeroSlideSubtitle = document.getElementById('form-hero-slide-subtitle');
+    const formHeroSlideImage = document.getElementById('form-hero-slide-image');
+    const formHeroSlideFile = document.getElementById('form-hero-slide-file');
+    const formHeroSlidePreview = document.getElementById('form-hero-slide-preview');
+    const formHeroSlidePreviewTitle = document.getElementById('form-hero-slide-preview-title');
+    const formHeroSlideActive = document.getElementById('form-hero-slide-active');
+    const heroSlideUploadTrigger = document.getElementById('hero-slide-upload-trigger');
+
     // Order Dossier Modal Elements
     const orderModal = document.getElementById('admin-order-modal');
     const orderModalCloseBtn = document.getElementById('admin-order-modal-close');
@@ -2840,6 +3158,7 @@ function initializeAdminDashboard() {
         renderAdminProductsTable();
         renderAdminOrdersTable();
         renderAdminCollectionsTable();
+        renderAdminHeroSlidesTable();
     };
 
     window.closeAdminFullview = (showFloatingReturn = false) => {
@@ -2865,32 +3184,49 @@ function initializeAdminDashboard() {
             if (adminTabBtnProducts) adminTabBtnProducts.classList.add('active');
             if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
             if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
+            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelProducts) adminPanelProducts.classList.remove('hidden');
             if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
             if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
+            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminProductsTable();
         } else if (targetTab === 'orders') {
             if (adminTabBtnOrders) adminTabBtnOrders.classList.add('active');
             if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
             if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
+            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelOrders) adminPanelOrders.classList.remove('hidden');
             if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
             if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
+            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminOrdersTable();
         } else if (targetTab === 'collections') {
             if (adminTabBtnCollections) adminTabBtnCollections.classList.add('active');
             if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
             if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
+            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelCollections) adminPanelCollections.classList.remove('hidden');
             if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
             if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
+            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminCollectionsTable();
+        } else if (targetTab === 'hero-slider') {
+            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.add('active');
+            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
+            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
+            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
+            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.remove('hidden');
+            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
+            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
+            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
+            renderAdminHeroSlidesTable();
         }
     }
 
     if (adminTabBtnProducts) adminTabBtnProducts.addEventListener('click', () => switchAdminTab('products'));
     if (adminTabBtnOrders) adminTabBtnOrders.addEventListener('click', () => switchAdminTab('orders'));
     if (adminTabBtnCollections) adminTabBtnCollections.addEventListener('click', () => switchAdminTab('collections'));
+    if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.addEventListener('click', () => switchAdminTab('hero-slider'));
 
     // -------------------------------------------------------------
     // PRODUCTS TABLE RENDERING
@@ -3900,6 +4236,294 @@ function initializeAdminDashboard() {
         }
     }
 
+    // -------------------------------------------------------------
+    // HERO SLIDES TABLE RENDERING & CONTROLS
+    // -------------------------------------------------------------
+    function renderAdminHeroSlidesTable() {
+        if (!adminHeroSlidesTbody) return;
+
+        const slides = getPaveliaHeroSlides();
+        const activeCount = slides.filter(s => s.active !== false).length;
+
+        if (adminTabHeroCount) adminTabHeroCount.textContent = slides.length;
+        if (adminStatHeroTotal) adminStatHeroTotal.textContent = slides.length;
+        if (adminStatHeroActive) adminStatHeroActive.textContent = `${activeCount} Live`;
+
+        const searchTerm = (adminHeroSearch ? adminHeroSearch.value : '').trim().toLowerCase();
+
+        let filtered = slides.filter(slide => {
+            if (!searchTerm) return true;
+            return (slide.title && slide.title.toLowerCase().includes(searchTerm)) ||
+                   (slide.subtitle && slide.subtitle.toLowerCase().includes(searchTerm)) ||
+                   (slide.image && slide.image.toLowerCase().includes(searchTerm));
+        });
+
+        if (filtered.length === 0) {
+            adminHeroSlidesTbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--color-text-subtle); font-style: italic;">
+                        No hero slides found matching your search.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        adminHeroSlidesTbody.innerHTML = filtered.map((slide, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === filtered.length - 1;
+            const isActive = slide.active !== false;
+
+            return `
+                <tr data-slide-id="${slide.id}">
+                    <td>
+                        <div class="admin-hero-cell">
+                            <div class="admin-hero-thumb-box">
+                                <img src="${slide.image}" alt="${slide.title || 'Slide'}" loading="lazy">
+                            </div>
+                            <div class="admin-hero-meta">
+                                <span class="admin-hero-title-text">${slide.title || 'Untitled Creation'}</span>
+                                <span class="admin-hero-sub-text" style="font-family: monospace; font-size: 0.65rem; color: #888;">${(slide.image.startsWith('data:') ? '[Uploaded Image File]' : slide.image.slice(0, 45) + (slide.image.length > 45 ? '...' : ''))}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.74rem; color: #E0E0E0; line-height: 1.35; display: block;">${slide.subtitle || '—'}</span>
+                    </td>
+                    <td>
+                        <div class="admin-order-controls">
+                            <button type="button" class="btn-order-move btn-move-up" data-slide-id="${slide.id}" ${isFirst ? 'disabled' : ''} title="Move Earlier in Slide Sequence">
+                                &uarr;
+                            </button>
+                            <span style="font-size: 0.72rem; color: var(--color-gold-light); font-weight: 600; min-width: 22px; text-align: center;">#${idx + 1}</span>
+                            <button type="button" class="btn-order-move btn-move-down" data-slide-id="${slide.id}" ${isLast ? 'disabled' : ''} title="Move Later in Slide Sequence">
+                                &darr;
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="admin-status-toggle-pill ${isActive ? 'status-active' : 'status-hidden'} btn-toggle-slide-status" data-slide-id="${slide.id}" title="Click to ${isActive ? 'Hide from' : 'Display on'} Homepage">
+                            <span>${isActive ? '● ACTIVE LIVE' : '○ HIDDEN'}</span>
+                        </button>
+                    </td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button type="button" class="btn-table-action btn-edit-hero-slide" data-slide-id="${slide.id}" title="Edit Slide">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                <span>Edit</span>
+                            </button>
+                            <button type="button" class="btn-table-action btn-action-delete btn-delete-hero-slide" data-slide-id="${slide.id}" title="Delete Slide">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Attach event listeners for hero slides table buttons
+        adminHeroSlidesTbody.querySelectorAll('.btn-edit-hero-slide').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openEditHeroSlideModal(btn.dataset.slideId);
+            });
+        });
+
+        adminHeroSlidesTbody.querySelectorAll('.btn-delete-hero-slide').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleDeleteHeroSlide(btn.dataset.slideId);
+            });
+        });
+
+        adminHeroSlidesTbody.querySelectorAll('.btn-toggle-slide-status').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleToggleHeroSlideStatus(btn.dataset.slideId);
+            });
+        });
+
+        adminHeroSlidesTbody.querySelectorAll('.btn-move-up').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleMoveHeroSlide(btn.dataset.slideId, -1);
+            });
+        });
+
+        adminHeroSlidesTbody.querySelectorAll('.btn-move-down').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleMoveHeroSlide(btn.dataset.slideId, 1);
+            });
+        });
+    }
+
+    // Modal Handling for Hero Slides
+    function openAddHeroSlideModal() {
+        if (!heroSlideModal) return;
+        if (heroSlideForm) heroSlideForm.reset();
+        if (heroSlideModalTitle) heroSlideModalTitle.textContent = 'ADD NEW HERO SLIDE';
+        if (formHeroSlideId) formHeroSlideId.value = '';
+        if (formHeroSlideActive) formHeroSlideActive.checked = true;
+        if (formHeroSlidePreview) {
+            formHeroSlidePreview.src = 'assets/images/luxury_jewelry_hero.jpg?v=3.5';
+            formHeroSlidePreview.style.display = 'block';
+        }
+        if (formHeroSlidePreviewTitle) formHeroSlidePreviewTitle.textContent = 'New Slide Preview';
+        if (formHeroSlideImage) formHeroSlideImage.value = '';
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-hero-slide');
+        heroSlideModal.classList.remove('hidden');
+    }
+
+    function openEditHeroSlideModal(slideId) {
+        if (!heroSlideModal) return;
+        const slides = getPaveliaHeroSlides();
+        const slide = slides.find(s => s.id === slideId);
+        if (!slide) return;
+
+        if (heroSlideModalTitle) heroSlideModalTitle.textContent = 'EDIT HERO SLIDE';
+        if (formHeroSlideId) formHeroSlideId.value = slide.id;
+        if (formHeroSlideTitle) formHeroSlideTitle.value = slide.title || '';
+        if (formHeroSlideSubtitle) formHeroSlideSubtitle.value = slide.subtitle || '';
+        if (formHeroSlideImage) formHeroSlideImage.value = slide.image || '';
+        if (formHeroSlideActive) formHeroSlideActive.checked = slide.active !== false;
+
+        if (formHeroSlidePreview) {
+            formHeroSlidePreview.src = slide.image;
+            formHeroSlidePreview.style.display = 'block';
+        }
+        if (formHeroSlidePreviewTitle) formHeroSlidePreviewTitle.textContent = slide.title || 'Slide Preview';
+
+        if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-hero-slide');
+        heroSlideModal.classList.remove('hidden');
+    }
+
+    function closeHeroSlideModal() {
+        if (heroSlideModal) heroSlideModal.classList.add('hidden');
+    }
+
+    function handleHeroSlideFormSubmit(e) {
+        e.preventDefault();
+        const slideId = (formHeroSlideId ? formHeroSlideId.value : '').trim();
+        const title = (formHeroSlideTitle ? formHeroSlideTitle.value : '').trim();
+        const subtitle = (formHeroSlideSubtitle ? formHeroSlideSubtitle.value : '').trim();
+        const image = (formHeroSlideImage ? formHeroSlideImage.value : '').trim();
+        const isActive = formHeroSlideActive ? formHeroSlideActive.checked : true;
+
+        if (!title || !image) {
+            alert('Please provide a title and image source for the hero slide.');
+            return;
+        }
+
+        let slides = getPaveliaHeroSlides();
+
+        if (slideId) {
+            const index = slides.findIndex(s => s.id === slideId);
+            if (index !== -1) {
+                slides[index] = {
+                    ...slides[index],
+                    title,
+                    subtitle,
+                    image,
+                    active: isActive
+                };
+            }
+        } else {
+            const newSlide = {
+                id: 'hero-slide-' + Date.now(),
+                title,
+                subtitle,
+                image,
+                active: isActive,
+                order: slides.length
+            };
+            slides.push(newSlide);
+        }
+
+        savePaveliaHeroSlides(slides);
+        renderAdminHeroSlidesTable();
+        closeHeroSlideModal();
+
+        // Immediate live sync with homepage slider
+        if (typeof initHeroSlider === 'function') {
+            initHeroSlider();
+        }
+
+        const showToastFn = window.showPaveliaToast || alert;
+        showToastFn(`✦ Hero banner slide "${title}" saved & updated live.`);
+    }
+
+    function handleDeleteHeroSlide(slideId) {
+        let slides = getPaveliaHeroSlides();
+        const slide = slides.find(s => s.id === slideId);
+        if (!slide) return;
+
+        if (slides.length <= 1) {
+            alert('At least one hero slide must remain in the catalogue.');
+            return;
+        }
+
+        if (confirm(`Remove slide "${slide.title}" from the hero showcase banner?`)) {
+            slides = slides.filter(s => s.id !== slideId);
+            slides.forEach((s, idx) => s.order = idx);
+            savePaveliaHeroSlides(slides);
+            renderAdminHeroSlidesTable();
+            if (typeof initHeroSlider === 'function') {
+                initHeroSlider();
+            }
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Hero slide "${slide.title}" removed.`);
+        }
+    }
+
+    function handleToggleHeroSlideStatus(slideId) {
+        let slides = getPaveliaHeroSlides();
+        const slide = slides.find(s => s.id === slideId);
+        if (!slide) return;
+
+        slide.active = slide.active === false ? true : false;
+        savePaveliaHeroSlides(slides);
+        renderAdminHeroSlidesTable();
+        if (typeof initHeroSlider === 'function') {
+            initHeroSlider();
+        }
+        const showToastFn = window.showPaveliaToast || alert;
+        showToastFn(`✦ Slide "${slide.title}" is now ${slide.active ? 'Active' : 'Hidden'}.`);
+    }
+
+    function handleMoveHeroSlide(slideId, direction) {
+        let slides = getPaveliaHeroSlides();
+        const index = slides.findIndex(s => s.id === slideId);
+        if (index === -1) return;
+
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= slides.length) return;
+
+        const temp = slides[index];
+        slides[index] = slides[targetIndex];
+        slides[targetIndex] = temp;
+
+        slides.forEach((s, idx) => s.order = idx);
+        savePaveliaHeroSlides(slides);
+        renderAdminHeroSlidesTable();
+        if (typeof initHeroSlider === 'function') {
+            initHeroSlider();
+        }
+    }
+
+    function handleResetHeroSlides() {
+        if (confirm('Reset hero slider to Pavelia original luxury jewelry masterworks?')) {
+            savePaveliaHeroSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s })));
+            renderAdminHeroSlidesTable();
+            if (typeof initHeroSlider === 'function') {
+                initHeroSlider();
+            }
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn('✦ Hero slider restored to original Haute creations.');
+        }
+    }
+
     // Event Listeners
     if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);
     if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', closeProductModal);
@@ -3931,6 +4555,83 @@ function initializeAdminDashboard() {
             }
         });
     }
+
+    // Hero Slider Event Listeners
+    if (btnOpenAddSlide) btnOpenAddSlide.addEventListener('click', openAddHeroSlideModal);
+    if (btnResetHeroSlides) btnResetHeroSlides.addEventListener('click', handleResetHeroSlides);
+    if (adminHeroSearch) adminHeroSearch.addEventListener('input', renderAdminHeroSlidesTable);
+    if (heroSlideModalCloseBtn) heroSlideModalCloseBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-hero-slide', closeHeroSlideModal);
+        else closeHeroSlideModal();
+    });
+    if (heroSlideCancelBtn) heroSlideCancelBtn.addEventListener('click', () => {
+        if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-hero-slide', closeHeroSlideModal);
+        else closeHeroSlideModal();
+    });
+    if (heroSlideForm) heroSlideForm.addEventListener('submit', handleHeroSlideFormSubmit);
+
+    if (heroSlideModal) {
+        heroSlideModal.addEventListener('click', (e) => {
+            if (e.target === heroSlideModal) {
+                if (window.PaveliaRouter) window.PaveliaRouter.handleModalClose('admin-hero-slide', closeHeroSlideModal);
+                else closeHeroSlideModal();
+            }
+        });
+    }
+
+    if (heroSlideUploadTrigger && formHeroSlideFile) {
+        heroSlideUploadTrigger.addEventListener('click', () => {
+            formHeroSlideFile.click();
+        });
+    }
+
+    if (formHeroSlideFile) {
+        formHeroSlideFile.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const dataUrl = event.target.result;
+                if (formHeroSlideImage) formHeroSlideImage.value = dataUrl;
+                if (formHeroSlidePreview) {
+                    formHeroSlidePreview.src = dataUrl;
+                    formHeroSlidePreview.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (formHeroSlideImage) {
+        formHeroSlideImage.addEventListener('input', () => {
+            const val = formHeroSlideImage.value.trim();
+            if (val && formHeroSlidePreview) {
+                formHeroSlidePreview.src = val;
+                formHeroSlidePreview.style.display = 'block';
+            }
+        });
+    }
+
+    if (formHeroSlideTitle) {
+        formHeroSlideTitle.addEventListener('input', () => {
+            if (formHeroSlidePreviewTitle) {
+                formHeroSlidePreviewTitle.textContent = formHeroSlideTitle.value.trim() || 'Slide Preview';
+            }
+        });
+    }
+
+    if (btnPreviewHeroStorefront) {
+        btnPreviewHeroStorefront.addEventListener('click', () => {
+            if (window.PaveliaRouter) {
+                window.PaveliaRouter.handleModalClose('admin', () => window.closeAdminFullview(true));
+                window.PaveliaRouter.navigateToSection('home', { push: true });
+            } else {
+                window.closeAdminFullview(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
     
     if (btnPreviewStorefront) {
         btnPreviewStorefront.addEventListener('click', () => {
@@ -3957,6 +4658,7 @@ function initializeAdminDashboard() {
         window.PaveliaRouter.registerModalCloser('admin-product', closeProductModal);
         window.PaveliaRouter.registerModalCloser('admin-order', closeAdminOrderModal);
         window.PaveliaRouter.registerModalCloser('admin-collection', closeCollectionModal);
+        window.PaveliaRouter.registerModalCloser('admin-hero-slide', closeHeroSlideModal);
     }
 
     if (btnTopLogout) {

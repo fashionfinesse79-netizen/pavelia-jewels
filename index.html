@@ -155,16 +155,38 @@
             </div>
         </header>
 
-        <!-- Premium Hero Section -->
-        <main class="hero-section" id="hero-interactive">
-            <!-- Background Ken Burns Zoom Image -->
+        <!-- Premium Hero Section with Dynamic Sliding Banner -->
+        <main class="hero-section" id="hero-interactive" aria-label="Pavelia Luxury Fine Jewelry Showcase">
+            <!-- Background Sliding Showcase (Parallax Layer) -->
             <div class="hero-bg-wrapper" id="parallax-bg">
-                <img src="assets/images/luxury_jewelry_hero.jpg?v=3.5" alt="PAVELIA Fine Jewelry Haute Solitaire Necklace and Earrings" class="hero-bg-img">
+                <div class="hero-slider-track" id="hero-slider-track">
+                    <!-- Initial Slide matching reference screenshot -->
+                    <div class="hero-slide active" data-slide-index="0">
+                        <img src="assets/images/luxury_jewelry_hero.jpg?v=3.5" alt="PAVELIA Fine Jewelry Haute Solitaire Necklace and Earrings" class="hero-bg-img hero-slide-img">
+                    </div>
+                </div>
                 <div class="hero-overlay-gradient"></div>
                 <div class="hero-overlay-shimmer"></div>
             </div>
 
-            <!-- Content Area (Parallax Layer) -->
+            <!-- Optional Luxury Navigation Arrows -->
+            <button type="button" class="hero-slider-arrow hero-slider-prev" id="hero-slider-prev" aria-label="Previous Slide">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button type="button" class="hero-slider-arrow hero-slider-next" id="hero-slider-next" aria-label="Next Slide">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <!-- Slide Pagination Progress Indicators -->
+            <div class="hero-slider-indicators" id="hero-slider-indicators" role="tablist" aria-label="Slider Pagination">
+                <!-- Injected dynamically via JS -->
+            </div>
+
+            <!-- Content Area (Fixed Foreground Parallax Layer) -->
             <div class="hero-content" id="parallax-content">
                 
                 <!-- Centered Brand Signature with Flower Emblem -->
@@ -1026,6 +1048,10 @@
                 <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 <span class="tab-title">COLLECTIONS (<span id="admin-tab-collections-count">5</span>)</span>
             </button>
+            <button class="admin-tab-item" data-tab="hero-slider" id="admin-tab-btn-hero-slider">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><circle cx="7.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span class="tab-title">HERO SLIDER (<span id="admin-tab-hero-count">4</span>)</span>
+            </button>
         </div>
 
         <!-- Admin Content Area -->
@@ -1185,6 +1211,65 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL 4: Homepage Hero Slider Management Panel -->
+            <div id="admin-panel-hero-slider" class="admin-tab-panel hidden">
+                <!-- Hero Slider Stats Row -->
+                <div class="admin-orders-stats-grid">
+                    <div class="admin-stat-card">
+                        <span class="stat-label">HERO SLIDES</span>
+                        <div class="stat-value" id="admin-stat-hero-total">4</div>
+                        <span class="stat-sub">Configured Showcase Images</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">ACTIVE IN SHOWCASE</span>
+                        <div class="stat-value gold-text" id="admin-stat-hero-active">4 Live</div>
+                        <span class="stat-sub">Displaying on Storefront</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">TRANSITION DURATION</span>
+                        <div class="stat-value" id="admin-stat-hero-speed">5.5s Auto</div>
+                        <span class="stat-sub">Smooth Cinematic Glide</span>
+                    </div>
+                </div>
+
+                <div class="admin-products-table-container">
+                    <div class="admin-table-controls">
+                        <div class="admin-search-wrapper">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="admin-hero-search" placeholder="Search hero slides by title, caption or URL...">
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn-admin-add" id="btn-admin-open-add-slide" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <span>✦ ADD HERO SLIDE</span>
+                            </button>
+                            <button type="button" class="btn-dossier-link" id="btn-admin-reset-hero-slides" style="font-size: 0.7rem; padding: 10px 14px; background: rgba(255,255,255,0.05); color: #C0C0C0; border-color: rgba(255,255,255,0.15);" title="Reset to Pavelia Default Hero Slides">
+                                <span>↺ RESET DEFAULTS</span>
+                            </button>
+                            <button type="button" class="btn-dossier-link" id="btn-admin-preview-hero-storefront" style="font-size: 0.7rem; padding: 10px 14px; background: rgba(197,168,128,0.1); color: var(--color-gold-light); border-color: rgba(197,168,128,0.3);" title="Preview Hero Slider on Storefront">
+                                <span>👁 VIEW HERO LIVE</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-responsive-wrapper">
+                        <table class="admin-products-table admin-hero-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 32%;">SLIDE &amp; PREVIEW</th>
+                                    <th style="width: 25%;">TITLE &amp; CAPTION</th>
+                                    <th style="width: 13%;">ORDER</th>
+                                    <th style="width: 14%;">STATUS</th>
+                                    <th style="width: 16%;">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-hero-slides-tbody">
+                                <!-- Injected dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1244,6 +1329,66 @@
                 <div class="admin-modal-actions">
                     <button type="button" class="btn-admin-cancel" id="btn-admin-collection-cancel">CANCEL</button>
                     <button type="submit" class="btn-admin-save" id="btn-admin-collection-save">SAVE COLLECTION</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Adding / Editing Hero Slider Images -->
+    <div id="admin-hero-slide-modal" class="admin-modal-backdrop hidden">
+        <div class="admin-modal-card">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-hero-slide-modal-title">EDIT HERO SLIDE</h3>
+                <button type="button" class="admin-modal-close" id="admin-hero-slide-modal-close">&times;</button>
+            </div>
+            <form id="admin-hero-slide-form" class="admin-modal-form">
+                <input type="hidden" id="form-hero-slide-id" value="">
+                
+                <div class="form-group">
+                    <label for="form-hero-slide-title" class="admin-form-label">Creation / Slide Title *</label>
+                    <input type="text" id="form-hero-slide-title" class="admin-form-input" placeholder="e.g. The Haute Solitaire Necklace &amp; Royal Studs" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-hero-slide-subtitle" class="admin-form-label">Subtitle / Note</label>
+                    <input type="text" id="form-hero-slide-subtitle" class="admin-form-input" placeholder="e.g. Hand-faceted diamonds on fluid champagne silk">
+                </div>
+
+                <div class="form-group">
+                    <label for="form-hero-slide-image" class="admin-form-label">Image URL / Path *</label>
+                    <input type="text" id="form-hero-slide-image" class="admin-form-input" placeholder="assets/images/... or https://images.unsplash.com/..." required>
+                </div>
+
+                <div class="form-group">
+                    <label class="admin-form-label">Or Upload Image From Computer</label>
+                    <div class="admin-file-upload-box" id="hero-slide-upload-trigger" style="border: 1px dashed rgba(197,168,128,0.45); padding: 14px; border-radius: 4px; text-align: center; background: rgba(0,0,0,0.35); cursor: pointer; transition: all var(--transition-fast);">
+                        <input type="file" id="form-hero-slide-file" accept="image/*" style="display: none;">
+                        <span style="font-size: 0.76rem; color: var(--color-gold-light); font-weight: 500;">📁 Click to upload local jewelry photo</span>
+                        <p style="font-size: 0.68rem; color: #888; margin-top: 4px;">Supports JPG, PNG, WEBP high-resolution luxury creations</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="admin-form-label">Live Background Slide Preview</label>
+                    <div id="form-hero-slide-preview-box" style="margin-top: 4px; display: flex; align-items: center; gap: 16px; background: #101010; padding: 12px; border-radius: 4px; border: 1px solid rgba(197,168,128,0.25);">
+                        <img id="form-hero-slide-preview" src="assets/images/luxury_jewelry_hero.jpg" alt="Preview" style="width: 130px; height: 75px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(197,168,128,0.4); display: block; background: #0A0A0A;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span id="form-hero-slide-preview-title" style="font-size: 0.78rem; color: #fff; font-weight: 500;">Haute Solitaire Creation</span>
+                            <span style="font-size: 0.68rem; color: #888;">Seamlessly displayed in the background with Ken Burns zoom &amp; subtle dark luxury vignette.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 14px;">
+                    <input type="checkbox" id="form-hero-slide-active" checked style="accent-color: var(--color-gold); width: 18px; height: 18px; cursor: pointer;">
+                    <label for="form-hero-slide-active" class="admin-form-label" style="margin-bottom: 0; cursor: pointer; text-transform: none; font-size: 0.82rem; color: #fff;">
+                        Active in Homepage Banner (uncheck to temporarily hide from visitors)
+                    </label>
+                </div>
+
+                <div class="admin-modal-actions">
+                    <button type="button" class="btn-admin-cancel" id="btn-admin-hero-slide-cancel">CANCEL</button>
+                    <button type="submit" class="btn-admin-save" id="btn-admin-hero-slide-save">SAVE HERO SLIDE</button>
                 </div>
             </form>
         </div>
