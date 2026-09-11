@@ -368,27 +368,50 @@ img {
     text-align: center;
 }
 
-.header-logo-badge {
-    display: inline-flex;
+.brand-logo-link {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.header-brand-text {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #FFFFFF;
-    border-radius: 50%;
-    padding: 2px;
+    text-align: center;
+    line-height: 1;
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
 }
 
-.header-logo-img-file {
-    height: 42px;
-    width: 42px;
-    object-fit: cover;
-    border-radius: 50%;
-    background-color: #FFFFFF;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.06));
-    transition: transform var(--transition-fast);
+.brand-name-main {
+    font-family: var(--font-serif-royal, 'Cinzel', Georgia, serif);
+    font-size: 1.45rem;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    color: var(--color-gold-dark, #8F7249);
+    text-transform: uppercase;
+    display: block;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(143, 114, 73, 0.15);
 }
 
-.header-logo-badge:hover .header-logo-img-file {
-    transform: scale(1.05);
+.brand-name-sub {
+    font-family: var(--font-sans, 'Montserrat', sans-serif);
+    font-size: 0.64rem;
+    font-weight: 500;
+    letter-spacing: 0.52em;
+    text-indent: 0.52em;
+    color: var(--color-gold-dark, #8F7249);
+    text-transform: uppercase;
+    display: block;
+    margin-top: 3px;
+    opacity: 0.92;
+}
+
+.brand-logo-link:hover .header-brand-text {
+    transform: scale(1.03);
+    opacity: 0.9;
 }
 
 /* User Welcome State in Header */
@@ -3715,8 +3738,16 @@ img {
         display: none;
     }
 
-    .header-logo-img-file {
-        height: 32px;
+    .brand-name-main {
+        font-size: 1.15rem;
+        letter-spacing: 0.18em;
+        text-indent: 0.18em;
+    }
+
+    .brand-name-sub {
+        font-size: 0.54rem;
+        letter-spacing: 0.36em;
+        text-indent: 0.36em;
     }
 
     .hero-section {
