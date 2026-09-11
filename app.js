@@ -941,6 +941,7 @@ window.PaveliaRouter = (function() {
         const sectionDefs = [
             { id: 'about-us', el: document.getElementById('about-us') },
             { id: 'bespoke', el: document.getElementById('bespoke-section') },
+            { id: 'pavelia-story', el: document.getElementById('pavelia-story') },
             { id: 'showroom', el: document.getElementById('showroom') },
             { id: 'jewellery', el: document.getElementById('jewellery') },
             { id: 'home', el: document.getElementById('hero') || document.getElementById('hero-interactive') }
@@ -1024,6 +1025,9 @@ window.PaveliaRouter = (function() {
             'campaigns': 'showroom',
             'showroom': 'showroom',
             'heritage': 'about-us',
+            'story': 'pavelia-story',
+            'our-story': 'pavelia-story',
+            'pavelia-story': 'pavelia-story',
             'bespoke': 'bespoke-section',
             'bespoke-section': 'bespoke-section',
             'about-us': 'about-us',
@@ -5494,6 +5498,93 @@ function initializeAuth() {
 }
 
 /* ==========================================================================
+   6B. THE PAVÉLIA STORY & 925 STERLING SILVER ATELIER
+   ========================================================================== */
+function initializeStorySection() {
+    const btnOpenStory = document.getElementById('btn-open-story');
+    const storyModal = document.getElementById('story-modal');
+    const storyModalClose = document.getElementById('story-modal-close');
+    const storyModalOverlay = document.getElementById('story-modal-overlay');
+
+    const btnOpenSilver = document.getElementById('btn-open-silver');
+    const silverModal = document.getElementById('silver-modal');
+    const silverModalClose = document.getElementById('silver-modal-close');
+    const silverModalOverlay = document.getElementById('silver-modal-overlay');
+
+    function openStoryModal() {
+        if (!storyModal) return;
+        storyModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeStoryModal() {
+        if (!storyModal) return;
+        storyModal.classList.add('hidden');
+        if (!silverModal || silverModal.classList.contains('hidden')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function openSilverModal() {
+        if (!silverModal) return;
+        silverModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSilverModal() {
+        if (!silverModal) return;
+        silverModal.classList.add('hidden');
+        if (!storyModal || storyModal.classList.contains('hidden')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (btnOpenStory) {
+        btnOpenStory.addEventListener('click', (e) => {
+            e.preventDefault();
+            openStoryModal();
+        });
+    }
+
+    if (storyModalClose) {
+        storyModalClose.addEventListener('click', closeStoryModal);
+    }
+    if (storyModalOverlay) {
+        storyModalOverlay.addEventListener('click', closeStoryModal);
+    }
+
+    if (btnOpenSilver) {
+        btnOpenSilver.addEventListener('click', (e) => {
+            e.preventDefault();
+            openSilverModal();
+        });
+    }
+
+    if (silverModalClose) {
+        silverModalClose.addEventListener('click', closeSilverModal);
+    }
+    if (silverModalOverlay) {
+        silverModalOverlay.addEventListener('click', closeSilverModal);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (storyModal && !storyModal.classList.contains('hidden')) {
+                closeStoryModal();
+            }
+            if (silverModal && !silverModal.classList.contains('hidden')) {
+                closeSilverModal();
+            }
+        }
+    });
+
+    if (window.PaveliaRouter) {
+        window.PaveliaRouter.registerModalCloser('story', closeStoryModal);
+        window.PaveliaRouter.registerModalCloser('silver-guide', closeSilverModal);
+    }
+}
+
+/* ==========================================================================
    7. BOOTSTRAP APPLICATION
    ========================================================================== */
 function initApp() {
@@ -5506,6 +5597,7 @@ function initApp() {
     initializeCheckoutFlow();
     initializeAdminDashboard();
     initializeAuth();
+    initializeStorySection();
 }
 
 if (document.readyState === 'loading') {
