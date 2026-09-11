@@ -2119,7 +2119,7 @@ function initializePaveliaCommerce() {
 
                     <div class="quickview-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button class="btn-qv-add-cart" id="btn-qv-add-bag" style="flex: 1; min-width: 180px;">ADD TO ATELIER BAG &rarr;</button>
-                        <button class="btn-qv-buynow" id="btn-qv-buynow" style="flex: 1; min-width: 180px; background: linear-gradient(135deg, #DFCA9B, #C5A880); color: #0A0A0A; border: none; font-family: var(--font-heading); font-size: 0.72rem; letter-spacing: 0.14em; font-weight: 700; padding: 14px 20px; border-radius: 2px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(197, 168, 128, 0.3);">BUY NOW &rarr;</button>
+                        <button class="btn-qv-buynow" id="btn-qv-buynow" style="flex: 1; min-width: 180px; background: var(--color-desert-sand, #BD946C); color: var(--color-desert-cream, #FAF5EE); border: 1px solid var(--color-desert-sand-deep, #A77B51); font-family: var(--font-heading); font-size: 0.72rem; letter-spacing: 0.14em; font-weight: 700; padding: 14px 20px; border-radius: 2px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(189, 148, 108, 0.3);">BUY NOW &rarr;</button>
                     </div>
                 </div>
             </div>
@@ -2527,7 +2527,7 @@ function initializeCheckoutFlow() {
 
             return `
                 <div class="checkout-item-row" style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(197,168,128,0.12);">
-                    <div style="width: 54px; height: 54px; border-radius: 2px; overflow: hidden; background: #0E0E0E; border: 1px solid rgba(197,168,128,0.2); flex-shrink: 0;">
+                    <div style="width: 54px; height: 54px; border-radius: 2px; overflow: hidden; background: #1C100A; border: 1px solid rgba(189,148,108,0.25); flex-shrink: 0;">
                         <img src="${itemImg}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="flex: 1; min-width: 0;">
@@ -2712,7 +2712,7 @@ function initializeCheckoutFlow() {
                     <div style="background: rgba(197,168,128,0.06); border: 1px solid rgba(197,168,128,0.2); padding: 14px 16px; border-radius: 3px; font-size: 0.76rem; color: #E0D5C1; line-height: 1.6;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <strong style="color: var(--color-gold); font-family: var(--font-heading); letter-spacing: 0.08em;">✦ ARMORED TRANSIT DESTINATION:</strong>
-                            <span style="font-size: 0.68rem; background: #1A1A1A; border: 1px solid #C5A880; color: #C5A880; padding: 2px 8px; border-radius: 2px;">${addressType.toUpperCase()}</span>
+                            <span style="font-size: 0.68rem; background: #26160F; border: 1px solid var(--color-desert-sand, #BD946C); color: var(--color-desert-sand, #BD946C); padding: 2px 8px; border-radius: 2px;">${addressType.toUpperCase()}</span>
                         </div>
                         <div style="font-weight: 600; color: #FFFFFF; font-size: 0.82rem;">${fullName} • +91 ${phoneDigits}</div>
                         <div style="color: #BFB4A0; margin-top: 2px;">${street}${landmark ? ', ' + landmark : ''}, ${city}, ${state} - ${pinClean}</div>
