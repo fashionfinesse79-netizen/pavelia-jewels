@@ -943,7 +943,6 @@ window.PaveliaRouter = (function() {
             { id: 'bespoke', el: document.getElementById('bespoke-section') },
             { id: 'heritage', el: document.getElementById('heritage') },
             { id: 'showroom', el: document.getElementById('showroom') },
-            { id: 'new-arrivals', el: document.getElementById('new-arrivals') },
             { id: 'jewellery', el: document.getElementById('jewellery') },
             { id: 'home', el: document.getElementById('hero') || document.getElementById('hero-interactive') }
         ];
@@ -1022,8 +1021,8 @@ window.PaveliaRouter = (function() {
             'hero-interactive': 'home',
             'jewellery': 'jewellery',
             'collections': 'jewellery',
-            'new-arrivals': 'new-arrivals',
-            'campaigns': 'new-arrivals',
+            'new-arrivals': 'showroom',
+            'campaigns': 'showroom',
             'showroom': 'showroom',
             'heritage': 'heritage',
             'bespoke': 'bespoke-section',
