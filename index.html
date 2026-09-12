@@ -393,6 +393,41 @@
             </div>
         </section>
 
+        <!-- Maison Instagram Atelier Gallery Section -->
+        <section class="pavelia-instagram-section" id="pavelia-instagram">
+            <div class="instagram-section-header">
+                <span class="instagram-kicker">✦ THE ATELIER DIARIES ✦</span>
+                <h2 class="instagram-title">FOLLOW @PAVELIAJEWELS</h2>
+                <p class="instagram-desc">Step into our lapidary sanctuary. Explore handcrafted 925 silver silhouettes, bespoke commissions &amp; quiet luxury moments.</p>
+                <div class="instagram-header-actions">
+                    <a href="https://www.instagram.com/paveliajewels/" target="_blank" rel="noopener noreferrer" class="btn-instagram-follow">
+                        <svg class="ig-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                        <span>JOIN OUR ATELIER ON INSTAGRAM</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Auto-Sliding Horizontal Row -->
+            <div class="instagram-slider-outer" id="instagram-slider-outer">
+                <button type="button" class="ig-nav-btn ig-prev-btn" id="ig-prev-btn" aria-label="Previous Instagram posts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <div class="instagram-slider-viewport" id="instagram-slider-viewport">
+                    <div class="instagram-slider-track" id="instagram-slider-track">
+                        <!-- Instagram cards dynamically injected by app.js -->
+                    </div>
+                </div>
+                <button type="button" class="ig-nav-btn ig-next-btn" id="ig-next-btn" aria-label="Next Instagram posts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        </section>
+
         <!-- Bespoke VIP Concierge Section -->
         <section class="bespoke-section" id="bespoke-section">
             <div class="bespoke-container">
@@ -1080,6 +1115,10 @@
                 <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><circle cx="7.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 <span class="tab-title">HERO SLIDER (<span id="admin-tab-hero-count">4</span>)</span>
             </button>
+            <button class="admin-tab-item" data-tab="instagram" id="admin-tab-btn-instagram">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                <span class="tab-title">INSTAGRAM GALLERY (<span id="admin-tab-instagram-count">6</span>)</span>
+            </button>
         </div>
 
         <!-- Admin Content Area -->
@@ -1298,6 +1337,65 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL 5: Instagram Gallery Management Panel -->
+            <div id="admin-panel-instagram" class="admin-tab-panel hidden">
+                <!-- Instagram Stats Row -->
+                <div class="admin-orders-stats-grid">
+                    <div class="admin-stat-card">
+                        <span class="stat-label">INSTAGRAM POSTS</span>
+                        <div class="stat-value" id="admin-stat-ig-total">6</div>
+                        <span class="stat-sub">Showcase Gallery Items</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">ACTIVE IN GALLERY</span>
+                        <div class="stat-value gold-text" id="admin-stat-ig-active">6 Live</div>
+                        <span class="stat-sub">Displaying on Storefront Row</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">AUTO-SLIDE MOTION</span>
+                        <div class="stat-value" id="admin-stat-ig-speed">Continuous</div>
+                        <span class="stat-sub">Auto-Glide with Pause-on-Hover</span>
+                    </div>
+                </div>
+
+                <div class="admin-products-table-container">
+                    <div class="admin-table-controls">
+                        <div class="admin-search-wrapper">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="admin-ig-search" placeholder="Search Instagram posts by caption, ID, or URL...">
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn-admin-add" id="btn-admin-open-add-ig" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <span>✦ ADD INSTAGRAM POST</span>
+                            </button>
+                            <button type="button" class="btn-dossier-link" id="btn-admin-reset-ig" style="font-size: 0.7rem; padding: 10px 14px; background: rgba(255,255,255,0.05); color: #C0C0C0; border-color: rgba(255,255,255,0.15);" title="Reset to Pavelia Default Instagram Posts">
+                                <span>↺ RESET DEFAULTS</span>
+                            </button>
+                            <button type="button" class="btn-dossier-link" id="btn-admin-preview-ig-storefront" style="font-size: 0.7rem; padding: 10px 14px; background: rgba(197,168,128,0.1); color: var(--color-gold-light); border-color: rgba(197,168,128,0.3);" title="Scroll to Instagram Gallery on Storefront">
+                                <span>👁 VIEW GALLERY LIVE</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-responsive-wrapper">
+                        <table class="admin-products-table admin-hero-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 28%;">IMAGE &amp; PREVIEW</th>
+                                    <th style="width: 25%;">CAPTION &amp; DETAILS</th>
+                                    <th style="width: 20%;">INSTAGRAM LINK</th>
+                                    <th style="width: 12%;">STATUS</th>
+                                    <th style="width: 15%;">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-ig-posts-tbody">
+                                <!-- Injected dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1417,6 +1515,67 @@
                 <div class="admin-modal-actions">
                     <button type="button" class="btn-admin-cancel" id="btn-admin-hero-slide-cancel">CANCEL</button>
                     <button type="submit" class="btn-admin-save" id="btn-admin-hero-slide-save">SAVE HERO SLIDE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Adding / Editing Instagram Posts -->
+    <div id="admin-instagram-modal" class="admin-modal-backdrop hidden">
+        <div class="admin-modal-card">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="admin-instagram-modal-title">EDIT INSTAGRAM POST</h3>
+                <button type="button" class="admin-modal-close" id="admin-instagram-modal-close">&times;</button>
+            </div>
+            <form id="admin-instagram-form" class="admin-modal-form">
+                <input type="hidden" id="form-instagram-id" value="">
+                
+                <div class="form-group">
+                    <label for="form-instagram-caption" class="admin-form-label">Post Caption / Description *</label>
+                    <input type="text" id="form-instagram-caption" class="admin-form-input" placeholder="e.g. Royal Solitaire Band in 925 Sterling Silver" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-instagram-link" class="admin-form-label">Instagram Post URL *</label>
+                    <input type="url" id="form-instagram-link" class="admin-form-input" placeholder="https://www.instagram.com/p/C.../ or profile URL" required>
+                    <span style="font-size: 0.68rem; color: #888; margin-top: 4px; display: block;">When visitors click this image, they will be redirected directly to this Instagram post.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-instagram-image" class="admin-form-label">Image URL / Path *</label>
+                    <input type="text" id="form-instagram-image" class="admin-form-input" placeholder="assets/images/... or https://images.unsplash.com/..." required>
+                </div>
+
+                <div class="form-group">
+                    <label class="admin-form-label">Or Upload Image From Computer</label>
+                    <div class="admin-file-upload-box" id="instagram-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.45); padding: 14px; border-radius: 4px; text-align: center; background: rgba(38,22,15,0.45); cursor: pointer; transition: all var(--transition-fast);">
+                        <input type="file" id="form-instagram-file" accept="image/*" style="display: none;">
+                        <span style="font-size: 0.76rem; color: var(--color-gold-light); font-weight: 500;">📁 Click to upload local photo</span>
+                        <p style="font-size: 0.68rem; color: #888; margin-top: 4px;">Square 1:1 format recommended for Instagram grid showcase</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="admin-form-label">Live Preview</label>
+                    <div id="form-instagram-preview-box" style="margin-top: 4px; display: flex; align-items: center; gap: 16px; background: #1C100A; padding: 12px; border-radius: 4px; border: 1px solid rgba(189,148,108,0.25);">
+                        <img id="form-instagram-preview" src="assets/images/atelier_story_craft.jpg" alt="Preview" style="width: 80px; height: 80px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(189,148,108,0.4); display: block; background: #1C100A;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
+                            <span id="form-instagram-preview-caption" style="font-size: 0.78rem; color: #fff; font-weight: 500;">Caption Preview</span>
+                            <span id="form-instagram-preview-link" style="font-size: 0.68rem; color: var(--color-gold-light); word-break: break-all;">https://www.instagram.com/paveliajewels/</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 14px;">
+                    <input type="checkbox" id="form-instagram-active" checked style="accent-color: var(--color-gold); width: 18px; height: 18px; cursor: pointer;">
+                    <label for="form-instagram-active" class="admin-form-label" style="margin-bottom: 0; cursor: pointer; text-transform: none; font-size: 0.82rem; color: #fff;">
+                        Active in Storefront Gallery (uncheck to temporarily hide from visitors)
+                    </label>
+                </div>
+
+                <div class="admin-modal-actions">
+                    <button type="button" class="btn-admin-cancel" id="btn-admin-instagram-cancel">CANCEL</button>
+                    <button type="submit" class="btn-admin-save" id="btn-admin-instagram-save">SAVE INSTAGRAM POST</button>
                 </div>
             </form>
         </div>
