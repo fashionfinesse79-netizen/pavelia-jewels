@@ -878,15 +878,6 @@ const DEFAULT_COLLECTIONS = [
         image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=700&auto=format&fit=crop',
         categoryFilter: 'bracelets',
         linkText: 'DISCOVER COLLECTION →'
-    },
-    {
-        id: 'col-giftvault',
-        name: 'THE ATELIER GIFT VAULT',
-        desc: 'Velvet boxed parures & private commissions',
-        badge: 'CURATED SETS',
-        image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=700&auto=format&fit=crop',
-        categoryFilter: 'all',
-        linkText: 'DISCOVER COLLECTION →'
     }
 ];
 
@@ -894,8 +885,9 @@ function getPaveliaCollections() {
     try {
         const stored = localStorage.getItem('pavelia_collections');
         if (stored) {
-            const parsed = JSON.parse(stored);
+            let parsed = JSON.parse(stored);
             if (Array.isArray(parsed) && parsed.length > 0) {
+                parsed = parsed.filter(c => c && c.id !== 'col-giftvault' && !c.name?.toLowerCase().includes('gift'));
                 return parsed;
             }
         }
