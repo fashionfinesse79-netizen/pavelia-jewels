@@ -1038,11 +1038,29 @@ img {
 /* -------------------------------------------------------------
  * 8. COMMON SECTION HEADERS & DIVIDERS
  * ------------------------------------------------------------- */
-.category-title-wrapper, .showroom-title-wrapper, .heritage-header, .reviews-title-wrapper, .carousel-title-wrapper {
+.category-title-wrapper, .heritage-header, .reviews-title-wrapper, .carousel-title-wrapper {
     text-align: center;
     padding: 20px 20px 0 20px;
     max-width: 800px;
     margin: 0 auto 36px auto;
+}
+
+.showroom-title-wrapper {
+    text-align: center;
+    padding: 0 20px;
+    margin: 0 auto 18px auto;
+}
+
+.showroom-title-wrapper .showroom-main-title {
+    font-family: var(--font-serif-royal, 'Cinzel', serif);
+    font-size: clamp(1.8rem, 3.8vw, 2.5rem);
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    color: var(--color-text-dark);
+    text-transform: uppercase;
+    line-height: 1.15;
+    margin: 0;
 }
 
 .category-title-wrapper {
@@ -1062,7 +1080,7 @@ img {
     margin-top: 4px;
 }
 
-.section-kicker, .carousel-pre-title, .showroom-pre-title {
+.section-kicker, .carousel-pre-title {
     font-family: var(--font-sans);
     font-size: 0.72rem;
     font-weight: 600;
@@ -1472,13 +1490,13 @@ img {
  * 11. HIGH JEWELRY SHOWROOM & PRODUCT CARDS
  * ------------------------------------------------------------- */
 .showroom-section {
-    padding: 60px 4%;
+    padding: 28px 4% 45px 4%;
     background-color: var(--color-bg-light);
 }
 
 .showroom-controls-bar {
     max-width: 1200px;
-    margin: 0 auto 28px auto;
+    margin: 0 auto 20px auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
