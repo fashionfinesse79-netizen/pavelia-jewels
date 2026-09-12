@@ -1045,6 +1045,23 @@ img {
     margin: 0 auto 36px auto;
 }
 
+.category-title-wrapper {
+    padding: 0 20px;
+    margin: 0 auto 20px auto;
+}
+
+.category-title-wrapper .section-kicker {
+    margin-bottom: 4px;
+}
+
+.category-title-wrapper .category-divider {
+    margin: 10px auto;
+}
+
+.category-title-wrapper .section-subtext {
+    margin-top: 4px;
+}
+
 .section-kicker, .carousel-pre-title, .showroom-pre-title {
     font-family: var(--font-sans);
     font-size: 0.72rem;
@@ -1100,7 +1117,7 @@ img {
  * 9. CURATED HAUTE COLLECTIONS (CATEGORIES)
  * ------------------------------------------------------------- */
 .category-section {
-    padding: 50px 4% 40px 4%;
+    padding: 22px 4% 35px 4%;
     background-color: var(--color-bg-light);
 }
 
