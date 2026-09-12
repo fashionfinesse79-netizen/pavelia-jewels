@@ -5323,6 +5323,22 @@ img {
     border-color: var(--color-desert-sand, #BD946C);
 }
 
+.admin-file-upload-box {
+    border: 1px dashed rgba(189, 148, 108, 0.45);
+    padding: 12px 16px;
+    border-radius: 4px;
+    text-align: center;
+    background: rgba(38, 22, 15, 0.45);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.admin-file-upload-box:hover {
+    border-color: var(--color-gold, #BD946C);
+    background: rgba(189, 148, 108, 0.15);
+    transform: translateY(-1px);
+}
+
 .admin-modal-actions {
     display: flex;
     justify-content: flex-end;

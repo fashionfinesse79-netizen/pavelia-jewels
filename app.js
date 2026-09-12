@@ -10,6 +10,79 @@ if ('scrollRestoration' in history) {
 }
 
 /* ==========================================================================
+   0. PAVELIA CLOUDINARY MEDIA STORAGE & CDN SERVICE
+   ========================================================================== */
+const PaveliaCloud = {
+    cloudName: 'ky58zc9x',
+    uploadPreset: 'pavelia_preset',
+
+    /**
+     * Direct Unsigned Upload to Cloudinary CDN
+     * @param {File|Blob} file 
+     * @param {HTMLElement} triggerEl Optional UI trigger element for loading state
+     * @param {HTMLElement} previewEl Optional image preview element
+     * @param {HTMLInputElement} urlInputEl Optional target URL input field
+     */
+    async uploadImage(file, triggerEl = null, previewEl = null, urlInputEl = null) {
+        let originalText = '';
+        if (triggerEl) {
+            originalText = triggerEl.innerHTML;
+            triggerEl.innerHTML = '<span style="font-size:0.75rem; color:var(--color-gold-light); font-weight:500;">⏳ Uploading to Cloudinary CDN...</span>';
+            triggerEl.style.opacity = '0.7';
+            triggerEl.style.pointerEvents = 'none';
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', this.uploadPreset);
+
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`;
+            const res = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error?.message || `Cloudinary Error ${res.status}`);
+            }
+
+            const data = await res.json();
+            const secureUrl = data.secure_url;
+
+            if (urlInputEl) {
+                urlInputEl.value = secureUrl;
+                urlInputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            if (previewEl) {
+                previewEl.src = secureUrl;
+                previewEl.style.display = 'block';
+            }
+
+            if (typeof showAuthToast === 'function') {
+                showAuthToast('☁️ High-res media uploaded to Cloudinary CDN.');
+            }
+
+            return secureUrl;
+        } catch (err) {
+            console.error('Cloudinary Upload Error:', err);
+            alert('Cloudinary upload notice: ' + (err.message || 'Unable to upload image'));
+            throw err;
+        } finally {
+            if (triggerEl) {
+                triggerEl.innerHTML = originalText;
+                triggerEl.style.opacity = '1';
+                triggerEl.style.pointerEvents = 'auto';
+            }
+        }
+    }
+};
+
+window.PaveliaCloud = PaveliaCloud;
+
+/* ==========================================================================
    1. MASTER HIGH JEWELRY PRODUCT DATABASE
    ========================================================================== */
 const PAVELIA_PRODUCTS = [
@@ -3033,6 +3106,7 @@ function initializeAdminDashboard() {
     const adminTabBtnOrders = document.getElementById('admin-tab-btn-orders');
     const adminTabBtnCollections = document.getElementById('admin-tab-btn-collections');
     const adminTabBtnHeroSlider = document.getElementById('admin-tab-btn-hero-slider');
+    const adminTabBtnCloud = document.getElementById('admin-tab-btn-cloud');
     const adminTabProdCount = document.getElementById('admin-tab-prod-count');
     const adminTabOrdersCount = document.getElementById('admin-tab-orders-count');
     const adminTabCollectionsCount = document.getElementById('admin-tab-collections-count');
@@ -3041,6 +3115,7 @@ function initializeAdminDashboard() {
     const adminPanelOrders = document.getElementById('admin-panel-orders');
     const adminPanelCollections = document.getElementById('admin-panel-collections');
     const adminPanelHeroSlider = document.getElementById('admin-panel-hero-slider');
+    const adminPanelCloud = document.getElementById('admin-panel-cloud');
 
     // Products Table Elements
     const adminProductSearch = document.getElementById('admin-product-search');
@@ -3206,60 +3281,35 @@ function initializeAdminDashboard() {
     // ADMIN TAB SWITCHING
     // -------------------------------------------------------------
     function switchAdminTab(targetTab) {
+        const tabBtns = [adminTabBtnProducts, adminTabBtnOrders, adminTabBtnCollections, adminTabBtnHeroSlider, adminTabBtnInstagram, adminTabBtnCloud];
+        const tabPanels = [adminPanelProducts, adminPanelOrders, adminPanelCollections, adminPanelHeroSlider, adminPanelInstagram, adminPanelCloud];
+
+        tabBtns.forEach(btn => { if (btn) btn.classList.remove('active'); });
+        tabPanels.forEach(panel => { if (panel) panel.classList.add('hidden'); });
+
         if (targetTab === 'products') {
             if (adminTabBtnProducts) adminTabBtnProducts.classList.add('active');
-            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
-            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
-            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelProducts) adminPanelProducts.classList.remove('hidden');
-            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
-            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
-            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminProductsTable();
         } else if (targetTab === 'orders') {
             if (adminTabBtnOrders) adminTabBtnOrders.classList.add('active');
-            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
-            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
-            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelOrders) adminPanelOrders.classList.remove('hidden');
-            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
-            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
-            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminOrdersTable();
         } else if (targetTab === 'collections') {
             if (adminTabBtnCollections) adminTabBtnCollections.classList.add('active');
-            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
-            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
-            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelCollections) adminPanelCollections.classList.remove('hidden');
-            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
-            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
-            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminCollectionsTable();
         } else if (targetTab === 'hero-slider') {
             if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.add('active');
-            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
-            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
-            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
-            if (adminTabBtnInstagram) adminTabBtnInstagram.classList.remove('active');
             if (adminPanelHeroSlider) adminPanelHeroSlider.classList.remove('hidden');
-            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
-            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
-            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
-            if (adminPanelInstagram) adminPanelInstagram.classList.add('hidden');
             renderAdminHeroSlidesTable();
         } else if (targetTab === 'instagram') {
             if (adminTabBtnInstagram) adminTabBtnInstagram.classList.add('active');
-            if (adminTabBtnProducts) adminTabBtnProducts.classList.remove('active');
-            if (adminTabBtnOrders) adminTabBtnOrders.classList.remove('active');
-            if (adminTabBtnCollections) adminTabBtnCollections.classList.remove('active');
-            if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.classList.remove('active');
             if (adminPanelInstagram) adminPanelInstagram.classList.remove('hidden');
-            if (adminPanelProducts) adminPanelProducts.classList.add('hidden');
-            if (adminPanelOrders) adminPanelOrders.classList.add('hidden');
-            if (adminPanelCollections) adminPanelCollections.classList.add('hidden');
-            if (adminPanelHeroSlider) adminPanelHeroSlider.classList.add('hidden');
             renderAdminInstagramTable();
+        } else if (targetTab === 'cloud') {
+            if (adminTabBtnCloud) adminTabBtnCloud.classList.add('active');
+            if (adminPanelCloud) adminPanelCloud.classList.remove('hidden');
         }
     }
 
@@ -3268,6 +3318,7 @@ function initializeAdminDashboard() {
     if (adminTabBtnCollections) adminTabBtnCollections.addEventListener('click', () => switchAdminTab('collections'));
     if (adminTabBtnHeroSlider) adminTabBtnHeroSlider.addEventListener('click', () => switchAdminTab('hero-slider'));
     if (adminTabBtnInstagram) adminTabBtnInstagram.addEventListener('click', () => switchAdminTab('instagram'));
+    if (adminTabBtnCloud) adminTabBtnCloud.addEventListener('click', () => switchAdminTab('cloud'));
 
     // -------------------------------------------------------------
     // PRODUCTS TABLE RENDERING
@@ -4627,20 +4678,12 @@ function initializeAdminDashboard() {
     }
 
     if (formHeroSlideFile) {
-        formHeroSlideFile.addEventListener('change', (e) => {
+        formHeroSlideFile.addEventListener('change', async (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const dataUrl = event.target.result;
-                if (formHeroSlideImage) formHeroSlideImage.value = dataUrl;
-                if (formHeroSlidePreview) {
-                    formHeroSlidePreview.src = dataUrl;
-                    formHeroSlidePreview.style.display = 'block';
-                }
-            };
-            reader.readAsDataURL(file);
+            try {
+                await PaveliaCloud.uploadImage(file, heroSlideUploadTrigger, formHeroSlidePreview, formHeroSlideImage);
+            } catch (err) {}
         });
     }
 
@@ -4900,20 +4943,77 @@ function initializeAdminDashboard() {
     // Local file upload for Instagram post
     if (instagramUploadTrigger && formInstagramFile) {
         instagramUploadTrigger.addEventListener('click', () => formInstagramFile.click());
-        formInstagramFile.addEventListener('change', (e) => {
+        formInstagramFile.addEventListener('change', async (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
+            try {
+                await PaveliaCloud.uploadImage(file, instagramUploadTrigger, formInstagramPreview, formInstagramImage);
+            } catch (err) {}
+        });
+    }
 
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const base64 = evt.target.result;
-                if (formInstagramImage) formInstagramImage.value = base64;
-                if (formInstagramPreview) {
-                    formInstagramPreview.src = base64;
-                    formInstagramPreview.style.display = 'block';
-                }
-            };
-            reader.readAsDataURL(file);
+    // Product Primary Image Cloudinary Upload
+    const productPrimaryTrigger = document.getElementById('product-primary-upload-trigger');
+    const formProductPrimaryFile = document.getElementById('form-product-primary-file');
+    const productPrimaryPreviewBox = document.getElementById('form-product-primary-preview-box');
+    const formProductPrimaryPreview = document.getElementById('form-product-primary-preview');
+    if (productPrimaryTrigger && formProductPrimaryFile) {
+        productPrimaryTrigger.addEventListener('click', () => formProductPrimaryFile.click());
+        formProductPrimaryFile.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                const url = await PaveliaCloud.uploadImage(file, productPrimaryTrigger, formProductPrimaryPreview, formProductImage);
+                if (productPrimaryPreviewBox) productPrimaryPreviewBox.style.display = 'flex';
+            } catch (err) {}
+        });
+    }
+
+    // Product Secondary Image Cloudinary Upload
+    const productSecondaryTrigger = document.getElementById('product-secondary-upload-trigger');
+    const formProductSecondaryFile = document.getElementById('form-product-secondary-file');
+    if (productSecondaryTrigger && formProductSecondaryFile) {
+        productSecondaryTrigger.addEventListener('click', () => formProductSecondaryFile.click());
+        formProductSecondaryFile.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                await PaveliaCloud.uploadImage(file, productSecondaryTrigger, null, formProductImage2);
+            } catch (err) {}
+        });
+    }
+
+    // Collection Image Cloudinary Upload
+    const collectionUploadTrigger = document.getElementById('collection-upload-trigger');
+    const formCollectionFile = document.getElementById('form-collection-file');
+    if (collectionUploadTrigger && formCollectionFile) {
+        collectionUploadTrigger.addEventListener('click', () => formCollectionFile.click());
+        formCollectionFile.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                await PaveliaCloud.uploadImage(file, collectionUploadTrigger, formCollectionImagePreview, formCollectionImage);
+            } catch (err) {}
+        });
+    }
+
+    // Cloud Storage Tab Test Uploader
+    const cloudTestTrigger = document.getElementById('cloud-test-upload-trigger');
+    const cloudTestFile = document.getElementById('cloud-test-file-input');
+    const cloudTestResult = document.getElementById('cloud-test-result');
+    const cloudTestPreview = document.getElementById('cloud-test-preview');
+    const cloudTestUrl = document.getElementById('cloud-test-url');
+    if (cloudTestTrigger && cloudTestFile) {
+        cloudTestTrigger.addEventListener('click', () => cloudTestFile.click());
+        cloudTestFile.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                const secureUrl = await PaveliaCloud.uploadImage(file, cloudTestTrigger);
+                if (cloudTestResult) cloudTestResult.style.display = 'block';
+                if (cloudTestPreview) cloudTestPreview.src = secureUrl;
+                if (cloudTestUrl) cloudTestUrl.textContent = secureUrl;
+            } catch (err) {}
         });
     }
 

@@ -1098,6 +1098,10 @@
                 <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                 <span class="tab-title">INSTAGRAM GALLERY (<span id="admin-tab-instagram-count">6</span>)</span>
             </button>
+            <button class="admin-tab-item" data-tab="cloud" id="admin-tab-btn-cloud">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                <span class="tab-title">CLOUD STORAGE (CDN)</span>
+            </button>
         </div>
 
         <!-- Admin Content Area -->
@@ -1375,6 +1379,58 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL 6: Cloudinary Cloud Storage Panel -->
+            <div id="admin-panel-cloud" class="admin-tab-panel hidden">
+                <div class="admin-orders-stats-grid">
+                    <div class="admin-stat-card">
+                        <span class="stat-label">CLOUDINARY STATUS</span>
+                        <div class="stat-value gold-text" style="font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #22c55e; font-size: 1.4rem;">●</span> ACTIVE &amp; CONNECTED
+                        </div>
+                        <span class="stat-sub">Global CDN Edge Network</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">CLOUD ENVIRONMENT</span>
+                        <div class="stat-value" id="cloud-stat-name">ky58zc9x</div>
+                        <span class="stat-sub">Product Environment</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-label">UPLOAD PRESET</span>
+                        <div class="stat-value gold-text" id="cloud-stat-preset">pavelia_preset</div>
+                        <span class="stat-sub">Unsigned Client Uplink</span>
+                    </div>
+                </div>
+
+                <div class="admin-products-table-container" style="padding: 24px; margin-top: 20px;">
+                    <h3 style="font-family: var(--font-serif-royal); font-size: 1.15rem; color: #fff; margin-bottom: 8px; letter-spacing: 0.1em;">
+                        ☁️ CLOUDINARY MEDIA CDN &amp; STORAGE
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.6; margin-bottom: 20px;">
+                        All high-resolution jewelry photos, campaign hero banners, and Instagram gallery stories are instantly stored and delivered worldwide via Cloudinary's high-performance content delivery network.
+                    </p>
+
+                    <div style="background: rgba(38,22,15,0.6); border: 1px solid rgba(189,148,108,0.3); border-radius: 6px; padding: 20px; max-width: 700px;">
+                        <h4 style="font-size: 0.88rem; color: var(--color-gold-light); margin-bottom: 12px; font-weight: 600;">
+                            Live Cloudinary Test Uploader
+                        </h4>
+                        <div class="admin-file-upload-box" id="cloud-test-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.5); padding: 24px; border-radius: 4px; text-align: center; background: rgba(28,16,10,0.6); cursor: pointer;">
+                            <input type="file" id="cloud-test-file-input" accept="image/*" style="display: none;">
+                            <span style="font-size: 0.82rem; color: #fff; font-weight: 500;">📁 Click to test-upload any image to Cloudinary CDN</span>
+                            <p style="font-size: 0.72rem; color: #888; margin-top: 6px;">Image will be uploaded to <code style="color: var(--color-gold-light);">ky58zc9x / pavelia_preset</code></p>
+                        </div>
+                        <div id="cloud-test-result" style="margin-top: 16px; display: none;">
+                            <div style="display: flex; align-items: center; gap: 14px; background: #1C100A; padding: 12px; border-radius: 4px; border: 1px solid rgba(189,148,108,0.25);">
+                                <img id="cloud-test-preview" src="" alt="Preview" style="width: 70px; height: 70px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(189,148,108,0.4);">
+                                <div style="flex: 1; min-width: 0;">
+                                    <span id="cloud-test-status" style="font-size: 0.76rem; color: #22c55e; font-weight: 600;">✓ Upload Successful!</span>
+                                    <p id="cloud-test-url" style="font-size: 0.7rem; color: var(--color-gold-light); word-break: break-all; margin-top: 4px;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1423,11 +1479,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="form-collection-image" class="admin-form-label">Cover Image URL *</label>
-                    <input type="url" id="form-collection-image" class="admin-form-input" placeholder="https://images.unsplash.com/photo-..." required>
+                    <label for="form-collection-image" class="admin-form-label">Cover Image (Cloudinary CDN URL) *</label>
+                    <input type="url" id="form-collection-image" class="admin-form-input" placeholder="https://res.cloudinary.com/... or https://..." required>
+                    <div class="admin-file-upload-box" id="collection-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.45); padding: 12px; border-radius: 4px; text-align: center; background: rgba(38,22,15,0.45); cursor: pointer; margin-top: 8px; transition: all var(--transition-fast);">
+                        <input type="file" id="form-collection-file" accept="image/*" style="display: none;">
+                        <span style="font-size: 0.74rem; color: var(--color-gold-light); font-weight: 500;">☁️ Upload collection image to Cloudinary CDN</span>
+                    </div>
                     <div id="form-collection-image-preview-box" style="margin-top: 10px; display: flex; align-items: center; gap: 14px;">
                         <img id="form-collection-image-preview" src="" alt="Preview" style="width: 70px; height: 70px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(189,148,108,0.3); display: none; background: #1C100A;">
-                        <span style="font-size: 0.72rem; color: #888;">Paste a direct high-res image URL (e.g. Unsplash) to preview and showcase live.</span>
+                        <span id="form-collection-preview-note" style="font-size: 0.72rem; color: #888;">Direct high-res CDN preview.</span>
                     </div>
                 </div>
 
@@ -1626,13 +1686,25 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="form-product-image" class="admin-form-label">Primary Image URL *</label>
+                    <label for="form-product-image" class="admin-form-label">Primary Image (Cloudinary CDN URL) *</label>
                     <input type="url" id="form-product-image" class="admin-form-input" placeholder="https://..." required>
+                    <div class="admin-file-upload-box" id="product-primary-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.45); padding: 12px; border-radius: 4px; text-align: center; background: rgba(38,22,15,0.45); cursor: pointer; margin-top: 8px; transition: all var(--transition-fast);">
+                        <input type="file" id="form-product-primary-file" accept="image/*" style="display: none;">
+                        <span style="font-size: 0.74rem; color: var(--color-gold-light); font-weight: 500;">☁️ Upload photo from computer to Cloudinary CDN</span>
+                    </div>
+                    <div id="form-product-primary-preview-box" style="margin-top: 8px; display: none; align-items: center; gap: 12px;">
+                        <img id="form-product-primary-preview" src="" alt="Preview" style="width: 55px; height: 55px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(189,148,108,0.3);">
+                        <span id="form-product-primary-status" style="font-size: 0.72rem; color: #22c55e;">✓ Uploaded to Cloudinary</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="form-product-image2" class="admin-form-label">Secondary / Detail Image URL (Optional)</label>
                     <input type="url" id="form-product-image2" class="admin-form-input" placeholder="https://...">
+                    <div class="admin-file-upload-box" id="product-secondary-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.45); padding: 10px; border-radius: 4px; text-align: center; background: rgba(38,22,15,0.45); cursor: pointer; margin-top: 8px; transition: all var(--transition-fast);">
+                        <input type="file" id="form-product-secondary-file" accept="image/*" style="display: none;">
+                        <span style="font-size: 0.72rem; color: var(--color-gold-light); font-weight: 500;">☁️ Upload secondary photo to Cloudinary CDN</span>
+                    </div>
                 </div>
 
                 <div class="admin-modal-actions">
