@@ -4617,15 +4617,18 @@ function initializeAdminDashboard() {
     }
 
     // Event Listeners
+    const btnAdminProductSave = document.getElementById('btn-admin-product-save');
     if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);
     if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', closeProductModal);
     if (productCancelBtn) productCancelBtn.addEventListener('click', closeProductModal);
     if (productForm) productForm.addEventListener('submit', handleProductFormSubmit);
+    if (btnAdminProductSave) btnAdminProductSave.addEventListener('click', handleProductFormSubmit);
 
     if (adminProductSearch) adminProductSearch.addEventListener('input', renderAdminProductsTable);
     if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', renderAdminProductsTable);
 
     // Collections Event Listeners
+    const btnAdminCollectionSave = document.getElementById('btn-admin-collection-save');
     if (btnOpenAddCollection) btnOpenAddCollection.addEventListener('click', openAddCollectionModal);
     if (btnResetCollections) btnResetCollections.addEventListener('click', handleResetCollections);
     if (collectionModalCloseBtn) collectionModalCloseBtn.addEventListener('click', () => {
@@ -4637,6 +4640,7 @@ function initializeAdminDashboard() {
         else closeCollectionModal();
     });
     if (collectionForm) collectionForm.addEventListener('submit', handleCollectionFormSubmit);
+    if (btnAdminCollectionSave) btnAdminCollectionSave.addEventListener('click', handleCollectionFormSubmit);
     if (adminCollectionsSearch) adminCollectionsSearch.addEventListener('input', renderAdminCollectionsTable);
 
     if (collectionModal) {
@@ -4649,6 +4653,7 @@ function initializeAdminDashboard() {
     }
 
     // Hero Slider Event Listeners
+    const btnAdminHeroSlideSave = document.getElementById('btn-admin-hero-slide-save');
     if (btnOpenAddSlide) btnOpenAddSlide.addEventListener('click', openAddHeroSlideModal);
     if (btnResetHeroSlides) btnResetHeroSlides.addEventListener('click', handleResetHeroSlides);
     if (adminHeroSearch) adminHeroSearch.addEventListener('input', renderAdminHeroSlidesTable);
@@ -4661,6 +4666,7 @@ function initializeAdminDashboard() {
         else closeHeroSlideModal();
     });
     if (heroSlideForm) heroSlideForm.addEventListener('submit', handleHeroSlideFormSubmit);
+    if (btnAdminHeroSlideSave) btnAdminHeroSlideSave.addEventListener('click', handleHeroSlideFormSubmit);
 
     if (heroSlideModal) {
         heroSlideModal.addEventListener('click', (e) => {
@@ -4898,46 +4904,64 @@ function initializeAdminDashboard() {
         btnAdminInstagramCancel.addEventListener('click', closeInstagramModal);
     }
 
+    const btnAdminInstagramSave = document.getElementById('btn-admin-instagram-save');
+
+    function saveInstagramPostAction(e) {
+        if (e && e.preventDefault) e.preventDefault();
+
+        const postId = (formInstagramId ? formInstagramId.value.trim() : '');
+        let caption = (formInstagramCaption ? formInstagramCaption.value.trim() : '');
+        let link = (formInstagramLink ? formInstagramLink.value.trim() : '');
+        let image = (formInstagramImage ? formInstagramImage.value.trim() : '');
+        const active = formInstagramActive ? formInstagramActive.checked : true;
+
+        if (!image) {
+            alert('Please choose or enter a photo for the Instagram post.');
+            return;
+        }
+
+        if (!caption) {
+            caption = 'Pavélia Haute Joaillerie Creation';
+        }
+
+        if (!link) {
+            link = 'https://www.instagram.com/paveliajewels/';
+        } else if (!link.startsWith('http://') && !link.startsWith('https://')) {
+            link = 'https://' + link;
+        }
+
+        let posts = getPaveliaInstagramPosts();
+
+        if (postId) {
+            const idx = posts.findIndex(p => p.id === postId);
+            if (idx !== -1) {
+                posts[idx] = { ...posts[idx], caption, link, image, active };
+                if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post updated.');
+            }
+        } else {
+            const newPost = {
+                id: 'pvl-ig-' + Date.now(),
+                caption,
+                link,
+                image,
+                active,
+                order: posts.length
+            };
+            posts.unshift(newPost);
+            if (typeof showAuthToast === 'function') showAuthToast('✦ New Instagram post added to gallery.');
+        }
+
+        savePaveliaInstagramPosts(posts);
+        closeInstagramModal();
+        renderAdminInstagramTable();
+        if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+    }
+
     if (adminInstagramForm) {
-        adminInstagramForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const postId = (formInstagramId ? formInstagramId.value.trim() : '');
-            const caption = (formInstagramCaption ? formInstagramCaption.value.trim() : '');
-            const link = (formInstagramLink ? formInstagramLink.value.trim() : '');
-            const image = (formInstagramImage ? formInstagramImage.value.trim() : '');
-            const active = formInstagramActive ? formInstagramActive.checked : true;
-
-            if (!caption || !image || !link) {
-                alert('Please enter a caption, Instagram post URL, and image.');
-                return;
-            }
-
-            let posts = getPaveliaInstagramPosts();
-
-            if (postId) {
-                const idx = posts.findIndex(p => p.id === postId);
-                if (idx !== -1) {
-                    posts[idx] = { ...posts[idx], caption, link, image, active };
-                    if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post updated.');
-                }
-            } else {
-                const newPost = {
-                    id: 'pvl-ig-' + Date.now(),
-                    caption,
-                    link,
-                    image,
-                    active,
-                    order: posts.length
-                };
-                posts.push(newPost);
-                if (typeof showAuthToast === 'function') showAuthToast('✦ New Instagram post added to gallery.');
-            }
-
-            savePaveliaInstagramPosts(posts);
-            closeInstagramModal();
-            renderAdminInstagramTable();
-            if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
-        });
+        adminInstagramForm.addEventListener('submit', saveInstagramPostAction);
+    }
+    if (btnAdminInstagramSave) {
+        btnAdminInstagramSave.addEventListener('click', saveInstagramPostAction);
     }
 
     // Local file upload for Instagram post

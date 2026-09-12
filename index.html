@@ -1570,26 +1570,26 @@
                 <input type="hidden" id="form-instagram-id" value="">
                 
                 <div class="form-group">
-                    <label for="form-instagram-caption" class="admin-form-label">Post Caption / Description *</label>
-                    <input type="text" id="form-instagram-caption" class="admin-form-input" placeholder="e.g. Royal Solitaire Band in 925 Sterling Silver" required>
+                    <label for="form-instagram-caption" class="admin-form-label">Post Caption / Description</label>
+                    <input type="text" id="form-instagram-caption" class="admin-form-input" placeholder="e.g. Royal Solitaire Band in 925 Sterling Silver">
                 </div>
 
                 <div class="form-group">
                     <label for="form-instagram-link" class="admin-form-label">Instagram Post URL *</label>
-                    <input type="url" id="form-instagram-link" class="admin-form-input" placeholder="https://www.instagram.com/p/C.../ or profile URL" required>
+                    <input type="text" id="form-instagram-link" class="admin-form-input" placeholder="https://www.instagram.com/p/C.../ or profile URL">
                     <span style="font-size: 0.68rem; color: #888; margin-top: 4px; display: block;">When visitors click this image, they will be redirected directly to this Instagram post.</span>
                 </div>
 
                 <div class="form-group">
                     <label for="form-instagram-image" class="admin-form-label">Image URL / Path *</label>
-                    <input type="text" id="form-instagram-image" class="admin-form-input" placeholder="assets/images/... or https://images.unsplash.com/..." required>
+                    <input type="text" id="form-instagram-image" class="admin-form-input" placeholder="https://res.cloudinary.com/... or assets/images/..." required>
                 </div>
 
                 <div class="form-group">
                     <label class="admin-form-label">Or Upload Image From Computer</label>
                     <div class="admin-file-upload-box" id="instagram-upload-trigger" style="border: 1px dashed rgba(189,148,108,0.45); padding: 14px; border-radius: 4px; text-align: center; background: rgba(38,22,15,0.45); cursor: pointer; transition: all var(--transition-fast);">
                         <input type="file" id="form-instagram-file" accept="image/*" style="display: none;">
-                        <span style="font-size: 0.76rem; color: var(--color-gold-light); font-weight: 500;">📁 Click to upload local photo</span>
+                        <span style="font-size: 0.76rem; color: var(--color-gold-light); font-weight: 500;">☁️ Click to upload photo to Cloudinary CDN</span>
                         <p style="font-size: 0.68rem; color: #888; margin-top: 4px;">Square 1:1 format recommended for Instagram grid showcase</p>
                     </div>
                 </div>
@@ -1614,7 +1614,7 @@
 
                 <div class="admin-modal-actions">
                     <button type="button" class="btn-admin-cancel" id="btn-admin-instagram-cancel">CANCEL</button>
-                    <button type="submit" class="btn-admin-save" id="btn-admin-instagram-save">SAVE INSTAGRAM POST</button>
+                    <button type="button" class="btn-admin-save" id="btn-admin-instagram-save">SAVE INSTAGRAM POST</button>
                 </div>
             </form>
         </div>
