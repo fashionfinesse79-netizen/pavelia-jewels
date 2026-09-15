@@ -6046,7 +6046,7 @@ function initializeStorySection() {
 }
 
 /* ==========================================================================
-   6C. INSTAGRAM ATELIER GALLERY — DATA & STOREFRONT RENDER
+   6C. INSTAGRAM ATELIER GALLERY — DATA & STOREFRONT RENDER (MongoDB-backed)
    ========================================================================== */
 
 const DEFAULT_INSTAGRAM_POSTS = [
@@ -6094,24 +6094,49 @@ const DEFAULT_INSTAGRAM_POSTS = [
     }
 ];
 
-function getPaveliaInstagramPosts() {
+// In-memory cache — populated on first fetch, keeps admin panel reads synchronous
+let _igPostsCache = null;
+
+async function fetchInstagramPostsFromServer() {
     try {
-        const stored = localStorage.getItem('pavelia_instagram_posts');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const res = await fetch('/api/instagram/posts');
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        const data = await res.json();
+        if (Array.isArray(data.posts) && data.posts.length > 0) {
+            _igPostsCache = data.posts;
+            return _igPostsCache;
         }
     } catch (e) {
-        console.warn('Pavelia Instagram posts storage notice:', e);
+        console.warn('Pavelia: Could not fetch Instagram posts from server, using defaults.', e);
     }
-    return DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p }));
+    _igPostsCache = DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p }));
+    return _igPostsCache;
 }
 
-function savePaveliaInstagramPosts(posts) {
+// Synchronous read from cache (always populated after gallery init)
+function getPaveliaInstagramPosts() {
+    return _igPostsCache || DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p }));
+}
+
+// Async save — sends to MongoDB via API, updates local cache immediately
+async function savePaveliaInstagramPosts(posts) {
+    _igPostsCache = posts; // update cache first for snappy admin UI
     try {
-        localStorage.setItem('pavelia_instagram_posts', JSON.stringify(posts));
+        const token = localStorage.getItem('pavelia_token');
+        const res = await fetch('/api/instagram/posts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ posts })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.error('Pavelia: Instagram save failed:', err.error || res.status);
+        }
     } catch (e) {
-        console.error('Error persisting Pavelia Instagram posts:', e);
+        console.error('Pavelia: Instagram save network error:', e);
     }
 }
 
@@ -6126,7 +6151,7 @@ function initInstagramGallery() {
 
     if (!track || !viewport) return;
 
-    // Build the cards
+    // Build cards from in-memory cache
     function buildCards() {
         const posts = getPaveliaInstagramPosts().filter(p => p.active !== false);
 
@@ -6170,9 +6195,13 @@ function initInstagramGallery() {
         `).join('');
     }
 
-    buildCards();
+    // Fetch from MongoDB then render & start slider
+    fetchInstagramPostsFromServer().then(() => {
+        buildCards();
+        startAutoSlide();
+    });
 
-    // Expose for admin re-render
+    // Expose for admin re-render — cache already updated by savePaveliaInstagramPosts
     window.initInstagramGallery = function () {
         buildCards();
         resetAutoSlide();
@@ -6218,8 +6247,6 @@ function initInstagramGallery() {
         stopAutoSlide();
         startAutoSlide();
     }
-
-    startAutoSlide();
 
     // Pause on hover / touch
     viewport.addEventListener('mouseenter', stopAutoSlide);
