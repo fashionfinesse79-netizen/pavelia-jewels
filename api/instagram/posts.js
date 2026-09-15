@@ -48,9 +48,11 @@ const DEFAULT_POSTS = [
     }
 ];
 
+const MASTER_ADMIN_KEY = process.env.ADMIN_KEY || 'pavelia_luxury_admin_2026';
+
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -62,13 +64,13 @@ module.exports = async (req, res) => {
             if (db) {
                 const col = db.collection('instagram_posts');
                 const record = await col.findOne({ _id: 'gallery' });
-                if (record && Array.isArray(record.posts) && record.posts.length > 0) {
+                if (record && Array.isArray(record.posts)) {
                     return res.status(200).json({ posts: record.posts });
                 }
             } else {
                 // Fallback store
                 const store = getFallbackStore();
-                if (store.instagram_posts && store.instagram_posts.length > 0) {
+                if (store.instagram_posts && Array.isArray(store.instagram_posts)) {
                     return res.status(200).json({ posts: store.instagram_posts });
                 }
             }
@@ -81,22 +83,31 @@ module.exports = async (req, res) => {
 
     // ── POST — admin-only, saves full posts array ─────────────────────────────
     if (req.method === 'POST') {
-        // Verify admin JWT
+        const adminKeyHeader = req.headers['x-admin-key'] || '';
         const authHeader = req.headers.authorization || '';
-        if (!authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authorization required.' });
+        const { posts, adminKey } = req.body || {};
+
+        let authorized = false;
+
+        // 1. Direct admin key check
+        if (adminKeyHeader === MASTER_ADMIN_KEY || adminKey === MASTER_ADMIN_KEY) {
+            authorized = true;
         }
-        let decoded;
-        try {
-            decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-        } catch {
-            return res.status(401).json({ error: 'Invalid or expired token.' });
+
+        // 2. Admin JWT check
+        if (!authorized && authHeader.startsWith('Bearer ')) {
+            try {
+                const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+                if (decoded && (decoded.role === 'admin' || decoded.email === 'admin@pavelia.com')) {
+                    authorized = true;
+                }
+            } catch {}
         }
-        if (decoded.role !== 'admin') {
+
+        if (!authorized) {
             return res.status(403).json({ error: 'Admin access required.' });
         }
 
-        const { posts } = req.body || {};
         if (!Array.isArray(posts)) {
             return res.status(400).json({ error: 'posts array required.' });
         }

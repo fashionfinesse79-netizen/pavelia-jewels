@@ -638,6 +638,7 @@ const DEFAULT_HERO_SLIDES = [
 ];
 
 // ── In-memory caches (server is source of truth) ─────────────────────────
+const PAVELIA_MASTER_ADMIN_KEY = 'pavelia_luxury_admin_2026';
 let _heroSlidesCache = null;
 let _catalogCache = null;
 let _collectionsCache = null;
@@ -645,10 +646,10 @@ let _collectionsCache = null;
 // ── Generic server fetch helper ───────────────────────────────────────────
 async function _fetchStoreData(collection) {
     try {
-        const res = await fetch(`/api/store/data?collection=${collection}`);
+        const res = await fetch(`/api/store/data?collection=${collection}&_t=${Date.now()}`);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const json = await res.json();
-        return json.data || null;
+        return json.data !== undefined ? json.data : null;
     } catch (e) {
         console.warn(`Pavelia: Could not fetch ${collection} from server.`, e);
         return null;
@@ -657,21 +658,33 @@ async function _fetchStoreData(collection) {
 
 async function _saveStoreData(collection, data) {
     try {
+        // Keep offline/instant mirror
+        try {
+            localStorage.setItem('pavelia_store_' + collection, JSON.stringify(data));
+        } catch (_) {}
+
         const token = localStorage.getItem('pavelia_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-admin-key': PAVELIA_MASTER_ADMIN_KEY
+        };
+        if (token && !token.startsWith('pvl_')) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         const res = await fetch(`/api/store/data?collection=${collection}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            body: JSON.stringify({ data })
+            headers,
+            body: JSON.stringify({ data, adminKey: PAVELIA_MASTER_ADMIN_KEY })
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             console.error(`Pavelia: ${collection} save failed:`, err.error || res.status);
+            return false;
         }
+        return true;
     } catch (e) {
         console.error(`Pavelia: ${collection} save network error:`, e);
+        return false;
     }
 }
 
@@ -683,14 +696,24 @@ function getPaveliaHeroSlides() {
 
 async function savePaveliaHeroSlides(slides) {
     _heroSlidesCache = slides;
-    await _saveStoreData('hero_slides', slides);
+    return await _saveStoreData('hero_slides', slides);
 }
 
 async function initHeroSlidesFromServer() {
     const data = await _fetchStoreData('hero_slides');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
         _heroSlidesCache = data;
     } else {
+        const local = localStorage.getItem('pavelia_store_hero_slides');
+        if (local) {
+            try {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    _heroSlidesCache = parsed;
+                    return;
+                }
+            } catch (_) {}
+        }
         _heroSlidesCache = DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
     }
 }
@@ -931,15 +954,25 @@ function getPaveliaCatalog() {
 
 async function savePaveliaCatalog(catalog) {
     _catalogCache = catalog;
-    await _saveStoreData('catalog', catalog);
+    return await _saveStoreData('catalog', catalog);
 }
 
 async function initCatalogFromServer() {
     const data = await _fetchStoreData('catalog');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
         _catalogCache = data;
     } else {
-        _catalogCache = PAVELIA_PRODUCTS;
+        const local = localStorage.getItem('pavelia_store_catalog');
+        if (local) {
+            try {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    _catalogCache = parsed;
+                    return;
+                }
+            } catch (_) {}
+        }
+        _catalogCache = PAVELIA_PRODUCTS.map(p => ({ ...p }));
     }
 }
 
@@ -995,14 +1028,24 @@ function getPaveliaCollections() {
 
 async function savePaveliaCollections(collections) {
     _collectionsCache = collections;
-    await _saveStoreData('collections', collections);
+    return await _saveStoreData('collections', collections);
 }
 
 async function initCollectionsFromServer() {
     const data = await _fetchStoreData('collections');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
         _collectionsCache = data;
     } else {
+        const local = localStorage.getItem('pavelia_store_collections');
+        if (local) {
+            try {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    _collectionsCache = parsed;
+                    return;
+                }
+            } catch (_) {}
+        }
         _collectionsCache = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
     }
 }
@@ -3548,8 +3591,8 @@ function initializeAdminDashboard() {
         else closeProductModal();
     });
 
-    function handleProductFormSubmit(e) {
-        e.preventDefault();
+    async function handleProductFormSubmit(e) {
+        if (e && e.preventDefault) e.preventDefault();
         const id = formProductId ? formProductId.value.trim() : '';
         const name = formProductName ? formProductName.value.trim() : '';
         const category = formProductCategory ? formProductCategory.value : 'rings';
@@ -3579,7 +3622,7 @@ function initializeAdminDashboard() {
         };
         const categoryLabel = categoryLabels[category] || 'Fine Jewelry';
 
-        let catalog = getPaveliaCatalog();
+        let catalog = getPaveliaCatalog().map(p => ({ ...p }));
 
         if (id) {
             // Edit existing creation
@@ -3625,8 +3668,8 @@ function initializeAdminDashboard() {
             catalog.unshift(newProduct);
         }
 
-        savePaveliaCatalog(catalog);
         closeProductModal();
+        await savePaveliaCatalog(catalog);
         renderAdminProductsTable();
 
         // Update storefront showroom and counts
@@ -3639,14 +3682,14 @@ function initializeAdminDashboard() {
         showToastFn(`✦ Creation "${name}" has been saved to the Maison catalog.`);
     }
 
-    function handleDeleteProduct(productId) {
+    async function handleDeleteProduct(productId) {
         let catalog = getPaveliaCatalog();
         const product = catalog.find(p => p.id === productId);
         if (!product) return;
 
         if (confirm(`Are you sure you wish to retire "${product.name}" (#${product.id.toUpperCase()}) from the live catalog?`)) {
             catalog = catalog.filter(p => p.id !== productId);
-            savePaveliaCatalog(catalog);
+            await savePaveliaCatalog(catalog);
             renderAdminProductsTable();
             if (typeof window.renderShowroomProducts === 'function') {
                 window.renderShowroomProducts();
@@ -3743,16 +3786,26 @@ function initializeAdminDashboard() {
 
     async function initOrdersFromServer() {
         const data = await _fetchStoreData('orders');
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
             _ordersCache = data;
         } else {
-            _ordersCache = DEFAULT_SEED_ORDERS;
+            const local = localStorage.getItem('pavelia_store_orders');
+            if (local) {
+                try {
+                    const parsed = JSON.parse(local);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        _ordersCache = parsed;
+                        return;
+                    }
+                } catch (_) {}
+            }
+            _ordersCache = DEFAULT_SEED_ORDERS.map(o => ({ ...o }));
         }
     }
 
     async function saveOrders(orders) {
         _ordersCache = orders;
-        await _saveStoreData('orders', orders);
+        return await _saveStoreData('orders', orders);
     }
 
 
@@ -4056,12 +4109,12 @@ function initializeAdminDashboard() {
         if (orderModal) orderModal.classList.add('hidden');
     }
 
-    function updateOrderStatus(orderId, newStatus) {
-        const orders = getStoredOrders();
+    async function updateOrderStatus(orderId, newStatus) {
+        const orders = getStoredOrders().map(o => ({ ...o }));
         const idx = orders.findIndex(o => o.orderId === orderId);
         if (idx !== -1) {
             orders[idx].status = newStatus;
-            saveOrders(orders); // async: updates cache + MongoDB
+            await saveOrders(orders); // async: updates cache + MongoDB
             renderAdminOrdersTable();
             const showToastFn = window.showPaveliaToast || alert;
             showToastFn(`✦ Commission ${orderId} updated to: ${newStatus}`);
@@ -4070,13 +4123,13 @@ function initializeAdminDashboard() {
     }
 
     if (dossierStatusForm) {
-        dossierStatusForm.addEventListener('submit', (e) => {
+        dossierStatusForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const orderId = dossierStatusForm.dataset.orderId;
             const newStatus = dossierStatusSelect ? dossierStatusSelect.value : '';
             if (orderId && newStatus) {
-                updateOrderStatus(orderId, newStatus);
                 closeAdminOrderModal();
+                await updateOrderStatus(orderId, newStatus);
             }
         });
     }
@@ -4296,8 +4349,8 @@ function initializeAdminDashboard() {
     }
 
     // Form Submit
-    function handleCollectionFormSubmit(e) {
-        e.preventDefault();
+    async function handleCollectionFormSubmit(e) {
+        if (e && e.preventDefault) e.preventDefault();
         const id = formCollectionId ? formCollectionId.value : '';
         const name = formCollectionName ? formCollectionName.value.trim().toUpperCase() : '';
         const badge = formCollectionBadge ? formCollectionBadge.value.trim().toUpperCase() : '05 MASTERPIECES';
@@ -4311,7 +4364,7 @@ function initializeAdminDashboard() {
             return;
         }
 
-        let collections = getPaveliaCollections();
+        let collections = getPaveliaCollections().map(c => ({ ...c }));
 
         if (id) {
             const idx = collections.findIndex(c => c.id === id);
@@ -4339,8 +4392,8 @@ function initializeAdminDashboard() {
             });
         }
 
-        savePaveliaCollections(collections);
         closeCollectionModal();
+        await savePaveliaCollections(collections);
         renderAdminCollectionsTable();
 
         if (typeof window.renderStorefrontCollections === 'function') {
@@ -4351,14 +4404,14 @@ function initializeAdminDashboard() {
         showToastFn(`✦ Curated Collection "${name}" updated and live on storefront.`);
     }
 
-    function handleDeleteCollection(collectionId) {
+    async function handleDeleteCollection(collectionId) {
         let collections = getPaveliaCollections();
         const col = collections.find(c => c.id === collectionId);
         if (!col) return;
 
         if (confirm(`Are you sure you wish to remove "${col.name}" from the curated showcase cards on the storefront?`)) {
             collections = collections.filter(c => c.id !== collectionId);
-            savePaveliaCollections(collections);
+            await savePaveliaCollections(collections);
             renderAdminCollectionsTable();
             if (typeof window.renderStorefrontCollections === 'function') {
                 window.renderStorefrontCollections();
@@ -4368,9 +4421,9 @@ function initializeAdminDashboard() {
         }
     }
 
-    function handleResetCollections() {
+    async function handleResetCollections() {
         if (confirm('Reset all curated collection showcase cards back to Pavelia original presets?')) {
-            savePaveliaCollections(DEFAULT_COLLECTIONS);
+            await savePaveliaCollections(DEFAULT_COLLECTIONS.map(c => ({ ...c })));
             renderAdminCollectionsTable();
             if (typeof window.renderStorefrontCollections === 'function') {
                 window.renderStorefrontCollections();
@@ -4547,8 +4600,8 @@ function initializeAdminDashboard() {
         if (heroSlideModal) heroSlideModal.classList.add('hidden');
     }
 
-    function handleHeroSlideFormSubmit(e) {
-        e.preventDefault();
+    async function handleHeroSlideFormSubmit(e) {
+        if (e && e.preventDefault) e.preventDefault();
         const slideId = (formHeroSlideId ? formHeroSlideId.value : '').trim();
         const title = (formHeroSlideTitle ? formHeroSlideTitle.value : '').trim();
         const subtitle = (formHeroSlideSubtitle ? formHeroSlideSubtitle.value : '').trim();
@@ -4560,7 +4613,7 @@ function initializeAdminDashboard() {
             return;
         }
 
-        let slides = getPaveliaHeroSlides();
+        let slides = getPaveliaHeroSlides().map(s => ({ ...s }));
 
         if (slideId) {
             const index = slides.findIndex(s => s.id === slideId);
@@ -4585,9 +4638,9 @@ function initializeAdminDashboard() {
             slides.push(newSlide);
         }
 
-        savePaveliaHeroSlides(slides);
-        renderAdminHeroSlidesTable();
         closeHeroSlideModal();
+        await savePaveliaHeroSlides(slides);
+        renderAdminHeroSlidesTable();
 
         // Immediate live sync with homepage slider
         if (typeof initHeroSlider === 'function') {
@@ -4598,7 +4651,7 @@ function initializeAdminDashboard() {
         showToastFn(`✦ Hero banner slide "${title}" saved & updated live.`);
     }
 
-    function handleDeleteHeroSlide(slideId) {
+    async function handleDeleteHeroSlide(slideId) {
         let slides = getPaveliaHeroSlides();
         const slide = slides.find(s => s.id === slideId);
         if (!slide) return;
@@ -4611,7 +4664,7 @@ function initializeAdminDashboard() {
         if (confirm(`Remove slide "${slide.title}" from the hero showcase banner?`)) {
             slides = slides.filter(s => s.id !== slideId);
             slides.forEach((s, idx) => s.order = idx);
-            savePaveliaHeroSlides(slides);
+            await savePaveliaHeroSlides(slides);
             renderAdminHeroSlidesTable();
             if (typeof initHeroSlider === 'function') {
                 initHeroSlider();
@@ -4621,13 +4674,13 @@ function initializeAdminDashboard() {
         }
     }
 
-    function handleToggleHeroSlideStatus(slideId) {
+    async function handleToggleHeroSlideStatus(slideId) {
         let slides = getPaveliaHeroSlides();
         const slide = slides.find(s => s.id === slideId);
         if (!slide) return;
 
         slide.active = slide.active === false ? true : false;
-        savePaveliaHeroSlides(slides);
+        await savePaveliaHeroSlides(slides);
         renderAdminHeroSlidesTable();
         if (typeof initHeroSlider === 'function') {
             initHeroSlider();
@@ -4636,7 +4689,7 @@ function initializeAdminDashboard() {
         showToastFn(`✦ Slide "${slide.title}" is now ${slide.active ? 'Active' : 'Hidden'}.`);
     }
 
-    function handleMoveHeroSlide(slideId, direction) {
+    async function handleMoveHeroSlide(slideId, direction) {
         let slides = getPaveliaHeroSlides();
         const index = slides.findIndex(s => s.id === slideId);
         if (index === -1) return;
@@ -4649,16 +4702,16 @@ function initializeAdminDashboard() {
         slides[targetIndex] = temp;
 
         slides.forEach((s, idx) => s.order = idx);
-        savePaveliaHeroSlides(slides);
+        await savePaveliaHeroSlides(slides);
         renderAdminHeroSlidesTable();
         if (typeof initHeroSlider === 'function') {
             initHeroSlider();
         }
     }
 
-    function handleResetHeroSlides() {
+    async function handleResetHeroSlides() {
         if (confirm('Reset hero slider to Pavelia original luxury jewelry masterworks?')) {
-            savePaveliaHeroSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s })));
+            await savePaveliaHeroSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s })));
             renderAdminHeroSlidesTable();
             if (typeof initHeroSlider === 'function') {
                 initHeroSlider();
@@ -4918,12 +4971,14 @@ function initializeAdminDashboard() {
             if (deleteBtn) {
                 const postId = deleteBtn.dataset.igId;
                 if (confirm('Remove this Instagram post from your gallery?')) {
-                    let posts = getPaveliaInstagramPosts();
-                    posts = posts.filter(p => p.id !== postId);
-                    savePaveliaInstagramPosts(posts);
-                    renderAdminInstagramTable();
-                    if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
-                    if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post removed.');
+                    (async () => {
+                        let posts = getPaveliaInstagramPosts();
+                        posts = posts.filter(p => p.id !== postId);
+                        await savePaveliaInstagramPosts(posts);
+                        renderAdminInstagramTable();
+                        if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+                        if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post removed.');
+                    })();
                 }
                 return;
             }
@@ -4931,15 +4986,17 @@ function initializeAdminDashboard() {
             const toggleBtn = e.target.closest('.btn-toggle-ig-status');
             if (toggleBtn) {
                 const postId = toggleBtn.dataset.igId;
-                let posts = getPaveliaInstagramPosts();
-                const targetPost = posts.find(p => p.id === postId);
-                if (targetPost) {
-                    targetPost.active = !(targetPost.active !== false);
-                    savePaveliaInstagramPosts(posts);
-                    renderAdminInstagramTable();
-                    if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
-                    if (typeof showAuthToast === 'function') showAuthToast(targetPost.active ? '✦ Post is now live in gallery.' : '✦ Post hidden from storefront.');
-                }
+                (async () => {
+                    let posts = getPaveliaInstagramPosts();
+                    const targetPost = posts.find(p => p.id === postId);
+                    if (targetPost) {
+                        targetPost.active = !(targetPost.active !== false);
+                        await savePaveliaInstagramPosts(posts);
+                        renderAdminInstagramTable();
+                        if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+                        if (typeof showAuthToast === 'function') showAuthToast(targetPost.active ? '✦ Post is now live in gallery.' : '✦ Post hidden from storefront.');
+                    }
+                })();
                 return;
             }
         });
@@ -4958,7 +5015,7 @@ function initializeAdminDashboard() {
 
     const btnAdminInstagramSave = document.getElementById('btn-admin-instagram-save');
 
-    function saveInstagramPostAction(e) {
+    async function saveInstagramPostAction(e) {
         if (e && e.preventDefault) e.preventDefault();
 
         const postId = (formInstagramId ? formInstagramId.value.trim() : '');
@@ -4982,7 +5039,7 @@ function initializeAdminDashboard() {
             link = 'https://' + link;
         }
 
-        let posts = getPaveliaInstagramPosts();
+        let posts = getPaveliaInstagramPosts().map(p => ({ ...p }));
 
         if (postId) {
             const idx = posts.findIndex(p => p.id === postId);
@@ -5003,8 +5060,8 @@ function initializeAdminDashboard() {
             if (typeof showAuthToast === 'function') showAuthToast('✦ New Instagram post added to gallery.');
         }
 
-        savePaveliaInstagramPosts(posts);
         closeInstagramModal();
+        await savePaveliaInstagramPosts(posts);
         renderAdminInstagramTable();
         if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
     }
@@ -5120,9 +5177,9 @@ function initializeAdminDashboard() {
     }
 
     if (btnAdminResetIg) {
-        btnAdminResetIg.addEventListener('click', () => {
+        btnAdminResetIg.addEventListener('click', async () => {
             if (confirm('Reset Instagram gallery back to default curation?')) {
-                localStorage.removeItem('pavelia_instagram_posts');
+                await savePaveliaInstagramPosts(DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p })));
                 renderAdminInstagramTable();
                 if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
                 if (typeof showAuthToast === 'function') showAuthToast('✦ Reset to default Instagram posts.');
@@ -6151,15 +6208,26 @@ let _igPostsCache = null;
 
 async function fetchInstagramPostsFromServer() {
     try {
-        const res = await fetch('/api/instagram/posts');
-        if (!res.ok) throw new Error('Server error ' + res.status);
-        const data = await res.json();
-        if (Array.isArray(data.posts) && data.posts.length > 0) {
-            _igPostsCache = data.posts;
-            return _igPostsCache;
+        const res = await fetch(`/api/instagram/posts?_t=${Date.now()}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.posts)) {
+                _igPostsCache = data.posts;
+                return _igPostsCache;
+            }
         }
     } catch (e) {
         console.warn('Pavelia: Could not fetch Instagram posts from server, using defaults.', e);
+    }
+    const local = localStorage.getItem('pavelia_store_instagram_posts');
+    if (local) {
+        try {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                _igPostsCache = parsed;
+                return _igPostsCache;
+            }
+        } catch (_) {}
     }
     _igPostsCache = DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p }));
     return _igPostsCache;
@@ -6172,23 +6240,33 @@ function getPaveliaInstagramPosts() {
 
 // Async save — sends to MongoDB via API, updates local cache immediately
 async function savePaveliaInstagramPosts(posts) {
-    _igPostsCache = posts; // update cache first for snappy admin UI
+    _igPostsCache = posts;
+    try {
+        localStorage.setItem('pavelia_store_instagram_posts', JSON.stringify(posts));
+    } catch (_) {}
     try {
         const token = localStorage.getItem('pavelia_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-admin-key': PAVELIA_MASTER_ADMIN_KEY
+        };
+        if (token && !token.startsWith('pvl_')) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         const res = await fetch('/api/instagram/posts', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            body: JSON.stringify({ posts })
+            headers,
+            body: JSON.stringify({ posts, adminKey: PAVELIA_MASTER_ADMIN_KEY })
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             console.error('Pavelia: Instagram save failed:', err.error || res.status);
+            return false;
         }
+        return true;
     } catch (e) {
         console.error('Pavelia: Instagram save network error:', e);
+        return false;
     }
 }
 

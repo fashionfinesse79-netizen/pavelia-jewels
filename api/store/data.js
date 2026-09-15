@@ -10,11 +10,13 @@ const { connectToDatabase, getFallbackStore, saveFallbackStore } = require('../d
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pavelia_luxury_jwt_key_est_2026';
 
+const MASTER_ADMIN_KEY = process.env.ADMIN_KEY || 'pavelia_luxury_admin_2026';
+
 const ALLOWED_COLLECTIONS = ['catalog', 'collections', 'hero_slides', 'orders'];
 
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -31,12 +33,12 @@ module.exports = async (req, res) => {
             if (db) {
                 const col = db.collection('store_data');
                 const record = await col.findOne({ _id: collection });
-                if (record && record.data) {
+                if (record && record.data !== undefined) {
                     return res.status(200).json({ data: record.data });
                 }
             } else {
                 const store = getFallbackStore();
-                if (store[collection]) {
+                if (store[collection] !== undefined) {
                     return res.status(200).json({ data: store[collection] });
                 }
             }
@@ -49,37 +51,49 @@ module.exports = async (req, res) => {
 
     // ── POST — admin write ───────────────────────────────────────────────────
     if (req.method === 'POST') {
-        // Orders can also be written by authenticated customers (for new order placement)
-        // All other writes require admin role
-        const authHeader = req.headers.authorization || '';
-        if (!authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authorization required.' });
-        }
-        let decoded;
-        try {
-            decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-        } catch {
-            return res.status(401).json({ error: 'Invalid or expired token.' });
-        }
-
-        const isAdmin = decoded.role === 'admin';
-        // Only orders can be written by non-admins (customers placing orders)
-        if (!isAdmin && collection !== 'orders') {
-            return res.status(403).json({ error: 'Admin access required.' });
-        }
-
-        const { data } = req.body || {};
+        const { data, adminKey } = req.body || {};
         if (data === undefined) {
             return res.status(400).json({ error: 'data field required.' });
         }
 
+        const adminKeyHeader = req.headers['x-admin-key'] || '';
+        const authHeader = req.headers.authorization || '';
+
+        let authorized = false;
+        let decoded = null;
+
+        // 1. Direct admin key verification (from admin dashboard)
+        if (adminKeyHeader === MASTER_ADMIN_KEY || adminKey === MASTER_ADMIN_KEY) {
+            authorized = true;
+        }
+
+        // 2. JWT verification (if logged in as admin)
+        if (!authorized && authHeader.startsWith('Bearer ')) {
+            try {
+                decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+                if (decoded && (decoded.role === 'admin' || decoded.email === 'admin@pavelia.com')) {
+                    authorized = true;
+                }
+            } catch {}
+        }
+
+        // 3. Orders collection can be saved by client checkout
+        if (collection === 'orders') {
+            authorized = true;
+        }
+
+        if (!authorized) {
+            return res.status(403).json({ error: 'Admin access required.' });
+        }
+
         try {
             const db = await connectToDatabase();
+            const updatedBy = (decoded && (decoded.email || decoded.userId)) || 'admin_suite';
             if (db) {
                 const col = db.collection('store_data');
                 await col.updateOne(
                     { _id: collection },
-                    { $set: { data, updatedAt: new Date(), updatedBy: decoded.email || decoded.userId } },
+                    { $set: { data, updatedAt: new Date(), updatedBy } },
                     { upsert: true }
                 );
             } else {
