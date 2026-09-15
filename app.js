@@ -6046,6 +6046,216 @@ function initializeStorySection() {
 }
 
 /* ==========================================================================
+   6C. INSTAGRAM ATELIER GALLERY — DATA & STOREFRONT RENDER
+   ========================================================================== */
+
+const DEFAULT_INSTAGRAM_POSTS = [
+    {
+        id: 'pvl-ig-1',
+        caption: 'Royal Solitaire Band in 925 Sterling Silver — handcrafted for quiet luxury.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 0
+    },
+    {
+        id: 'pvl-ig-2',
+        caption: 'Orion Diamond Studs — celestial sparkle meets lapidary artistry.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 1
+    },
+    {
+        id: 'pvl-ig-3',
+        caption: 'Riviera Tennis Bracelet — a timeless arc of brilliance.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 2
+    },
+    {
+        id: 'pvl-ig-4',
+        caption: 'Bespoke choker commission — sculpted in precious sterling silver.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 3
+    },
+    {
+        id: 'pvl-ig-5',
+        caption: 'Cascading diamond ear drops — understated opulence, redefined.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 4
+    },
+    {
+        id: 'pvl-ig-6',
+        caption: 'Statement cocktail ring — born from the atelier, worn for eternity.',
+        link: 'https://www.instagram.com/paveliajewels/',
+        image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=700&auto=format&fit=crop',
+        active: true, order: 5
+    }
+];
+
+function getPaveliaInstagramPosts() {
+    try {
+        const stored = localStorage.getItem('pavelia_instagram_posts');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch (e) {
+        console.warn('Pavelia Instagram posts storage notice:', e);
+    }
+    return DEFAULT_INSTAGRAM_POSTS.map(p => ({ ...p }));
+}
+
+function savePaveliaInstagramPosts(posts) {
+    try {
+        localStorage.setItem('pavelia_instagram_posts', JSON.stringify(posts));
+    } catch (e) {
+        console.error('Error persisting Pavelia Instagram posts:', e);
+    }
+}
+
+window.getPaveliaInstagramPosts = getPaveliaInstagramPosts;
+window.savePaveliaInstagramPosts = savePaveliaInstagramPosts;
+
+function initInstagramGallery() {
+    const track = document.getElementById('instagram-slider-track');
+    const viewport = document.getElementById('instagram-slider-viewport');
+    const prevBtn = document.getElementById('ig-prev-btn');
+    const nextBtn = document.getElementById('ig-next-btn');
+
+    if (!track || !viewport) return;
+
+    // Build the cards
+    function buildCards() {
+        const posts = getPaveliaInstagramPosts().filter(p => p.active !== false);
+
+        if (posts.length === 0) {
+            track.innerHTML = `
+                <div style="padding: 60px 40px; text-align: center; color: #78716c; font-family: var(--font-sans,'Montserrat',sans-serif); font-size: 0.85rem; letter-spacing: 0.1em;">
+                    No gallery posts yet. Add posts from the admin panel.
+                </div>`;
+            return;
+        }
+
+        track.innerHTML = posts.map(post => `
+            <a href="${post.link || 'https://www.instagram.com/paveliajewels/'}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="ig-post-card"
+               aria-label="${(post.caption || 'Pavélia Instagram post').replace(/"/g, '&quot;')}">
+                <img
+                    src="${post.image}"
+                    alt="${(post.caption || 'Pavélia Jewels').replace(/"/g, '&quot;')}"
+                    class="ig-post-img"
+                    loading="lazy"
+                    onerror="this.src='assets/images/atelier_story_craft.jpg'">
+                <div class="ig-post-overlay">
+                    <div class="ig-overlay-top">
+                        <span class="ig-badge-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </span>
+                        <span class="ig-handle-tag">@PAVELIAJEWELS</span>
+                    </div>
+                    <div class="ig-overlay-bottom">
+                        <p class="ig-post-caption">${post.caption || ''}</p>
+                        <span class="ig-action-prompt">VIEW ON INSTAGRAM ↗</span>
+                    </div>
+                </div>
+            </a>
+        `).join('');
+    }
+
+    buildCards();
+
+    // Expose for admin re-render
+    window.initInstagramGallery = function () {
+        buildCards();
+        resetAutoSlide();
+    };
+
+    // Card width + gap
+    const CARD_W = 280 + 22;
+    const STEP_PX = CARD_W * 2; // scroll 2 cards per click
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            viewport.scrollBy({ left: -STEP_PX, behavior: 'smooth' });
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            viewport.scrollBy({ left: STEP_PX, behavior: 'smooth' });
+        });
+    }
+
+    // Auto-slide
+    let autoSlideInterval = null;
+    const AUTO_INTERVAL_MS = 3200;
+
+    function startAutoSlide() {
+        if (autoSlideInterval) return;
+        autoSlideInterval = setInterval(() => {
+            const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+            if (viewport.scrollLeft >= maxScroll - 4) {
+                viewport.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                viewport.scrollBy({ left: CARD_W, behavior: 'smooth' });
+            }
+        }, AUTO_INTERVAL_MS);
+    }
+
+    function stopAutoSlide() {
+        clearInterval(autoSlideInterval);
+        autoSlideInterval = null;
+    }
+
+    function resetAutoSlide() {
+        stopAutoSlide();
+        startAutoSlide();
+    }
+
+    startAutoSlide();
+
+    // Pause on hover / touch
+    viewport.addEventListener('mouseenter', stopAutoSlide);
+    viewport.addEventListener('mouseleave', startAutoSlide);
+    viewport.addEventListener('touchstart', stopAutoSlide, { passive: true });
+    viewport.addEventListener('touchend', () => {
+        setTimeout(startAutoSlide, 1500);
+    }, { passive: true });
+
+    // Drag-to-scroll
+    let isDragging = false;
+    let dragStartX = 0;
+    let scrollStartX = 0;
+
+    viewport.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartX = e.pageX;
+        scrollStartX = viewport.scrollLeft;
+        stopAutoSlide();
+        viewport.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            viewport.style.cursor = 'grab';
+            setTimeout(startAutoSlide, 1500);
+        }
+    });
+    viewport.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        viewport.scrollLeft = scrollStartX - (e.pageX - dragStartX);
+    });
+}
+
+/* ==========================================================================
    7. BOOTSTRAP APPLICATION
    ========================================================================== */
 function initApp() {
