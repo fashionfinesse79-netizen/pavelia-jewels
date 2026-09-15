@@ -637,26 +637,61 @@ const DEFAULT_HERO_SLIDES = [
     }
 ];
 
-function getPaveliaHeroSlides() {
+// ── In-memory caches (server is source of truth) ─────────────────────────
+let _heroSlidesCache = null;
+let _catalogCache = null;
+let _collectionsCache = null;
+
+// ── Generic server fetch helper ───────────────────────────────────────────
+async function _fetchStoreData(collection) {
     try {
-        const stored = localStorage.getItem('pavelia_hero_slides');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            }
+        const res = await fetch(`/api/store/data?collection=${collection}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        return json.data || null;
+    } catch (e) {
+        console.warn(`Pavelia: Could not fetch ${collection} from server.`, e);
+        return null;
+    }
+}
+
+async function _saveStoreData(collection, data) {
+    try {
+        const token = localStorage.getItem('pavelia_token');
+        const res = await fetch(`/api/store/data?collection=${collection}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ data })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.error(`Pavelia: ${collection} save failed:`, err.error || res.status);
         }
     } catch (e) {
-        console.warn('Pavelia hero slides storage notice:', e);
+        console.error(`Pavelia: ${collection} save network error:`, e);
     }
+}
+
+// ── Hero Slides ───────────────────────────────────────────────────────────
+function getPaveliaHeroSlides() {
+    if (_heroSlidesCache) return _heroSlidesCache.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     return DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
 }
 
-function savePaveliaHeroSlides(slides) {
-    try {
-        localStorage.setItem('pavelia_hero_slides', JSON.stringify(slides));
-    } catch (e) {
-        console.error('Error persisting Pavelia hero slides:', e);
+async function savePaveliaHeroSlides(slides) {
+    _heroSlidesCache = slides;
+    await _saveStoreData('hero_slides', slides);
+}
+
+async function initHeroSlidesFromServer() {
+    const data = await _fetchStoreData('hero_slides');
+    if (data && Array.isArray(data) && data.length > 0) {
+        _heroSlidesCache = data;
+    } else {
+        _heroSlidesCache = DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
     }
 }
 
@@ -889,26 +924,22 @@ window.initHeroSlider = initHeroSlider;
 /* ==========================================================================
    2. DYNAMIC CATALOG STORAGE & DATA ACCESS LAYER
    ========================================================================== */
+// ── Product Catalog ───────────────────────────────────────────────────────
 function getPaveliaCatalog() {
-    try {
-        const stored = localStorage.getItem('pavelia_catalog');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed;
-            }
-        }
-    } catch (e) {
-        console.warn('Pavelia catalog storage notice:', e);
-    }
-    return PAVELIA_PRODUCTS;
+    return _catalogCache || PAVELIA_PRODUCTS;
 }
 
-function savePaveliaCatalog(catalog) {
-    try {
-        localStorage.setItem('pavelia_catalog', JSON.stringify(catalog));
-    } catch (e) {
-        console.error('Error persisting Pavelia catalog:', e);
+async function savePaveliaCatalog(catalog) {
+    _catalogCache = catalog;
+    await _saveStoreData('catalog', catalog);
+}
+
+async function initCatalogFromServer() {
+    const data = await _fetchStoreData('catalog');
+    if (data && Array.isArray(data) && data.length > 0) {
+        _catalogCache = data;
+    } else {
+        _catalogCache = PAVELIA_PRODUCTS;
     }
 }
 
@@ -954,27 +985,25 @@ const DEFAULT_COLLECTIONS = [
     }
 ];
 
+// ── Collections ───────────────────────────────────────────────────────────
 function getPaveliaCollections() {
-    try {
-        const stored = localStorage.getItem('pavelia_collections');
-        if (stored) {
-            let parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                parsed = parsed.filter(c => c && c.id !== 'col-giftvault' && !c.name?.toLowerCase().includes('gift'));
-                return parsed;
-            }
-        }
-    } catch (e) {
-        console.warn('Pavelia collections storage notice:', e);
+    if (_collectionsCache) {
+        return _collectionsCache.filter(c => c && c.id !== 'col-giftvault' && !c.name?.toLowerCase().includes('gift'));
     }
     return DEFAULT_COLLECTIONS;
 }
 
-function savePaveliaCollections(collections) {
-    try {
-        localStorage.setItem('pavelia_collections', JSON.stringify(collections));
-    } catch (e) {
-        console.error('Error persisting Pavelia collections:', e);
+async function savePaveliaCollections(collections) {
+    _collectionsCache = collections;
+    await _saveStoreData('collections', collections);
+}
+
+async function initCollectionsFromServer() {
+    const data = await _fetchStoreData('collections');
+    if (data && Array.isArray(data) && data.length > 0) {
+        _collectionsCache = data;
+    } else {
+        _collectionsCache = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
     }
 }
 
@@ -2964,14 +2993,21 @@ function initializeCheckoutFlow() {
             status: 'Confirmed • In Bespoke Atelier Preparation'
         };
 
-        // Save order to LocalStorage
-        try {
-            const existingOrders = JSON.parse(localStorage.getItem('pavelia_orders') || '[]');
-            existingOrders.unshift(newOrderRecord);
-            localStorage.setItem('pavelia_orders', JSON.stringify(existingOrders));
-        } catch (e) {
-            console.error('Failed to store order in localStorage', e);
-        }
+        // Save order to MongoDB via API
+        (async () => {
+            try {
+                const existingOrders = await _fetchStoreData('orders') || [];
+                existingOrders.unshift(newOrderRecord);
+                await _saveStoreData('orders', existingOrders);
+                // Keep admin cache in sync if it's loaded
+                if (typeof _ordersCache !== 'undefined') {
+                    // _ordersCache is scoped inside initializeAdminDashboard,
+                    // so we just re-fetch next time admin opens
+                }
+            } catch (e) {
+                console.error('Failed to save order to server', e);
+            }
+        })();
 
         // Clear cart if this was a full cart drawer checkout
         if (!isInstantSingleBuy) {
@@ -3247,7 +3283,7 @@ function initializeAdminDashboard() {
     const dossierStatusForm = document.getElementById('dossier-status-form');
     const dossierStatusSelect = document.getElementById('dossier-status-select');
 
-    window.openAdminFullview = (push = true) => {
+    window.openAdminFullview = async (push = true) => {
         if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin');
         if (adminDashboard) {
             adminDashboard.classList.remove('hidden');
@@ -3256,6 +3292,13 @@ function initializeAdminDashboard() {
         if (floatingReturnBtn) {
             floatingReturnBtn.classList.add('hidden');
         }
+        // Re-fetch fresh data from MongoDB every time admin opens
+        await Promise.all([
+            initCatalogFromServer(),
+            initCollectionsFromServer(),
+            initHeroSlidesFromServer(),
+            initOrdersFromServer(),
+        ]);
         renderAdminProductsTable();
         renderAdminOrdersTable();
         renderAdminCollectionsTable();
@@ -3691,18 +3734,27 @@ function initializeAdminDashboard() {
         }
     ];
 
+    // ── Orders in-memory cache ─────────────────────────────────────────────
+    let _ordersCache = null;
+
     function getStoredOrders() {
-        try {
-            const stored = JSON.parse(localStorage.getItem('pavelia_orders'));
-            if (Array.isArray(stored) && stored.length > 0) {
-                return stored;
-            }
-            localStorage.setItem('pavelia_orders', JSON.stringify(DEFAULT_SEED_ORDERS));
-            return DEFAULT_SEED_ORDERS;
-        } catch (e) {
-            return DEFAULT_SEED_ORDERS;
+        return _ordersCache || DEFAULT_SEED_ORDERS;
+    }
+
+    async function initOrdersFromServer() {
+        const data = await _fetchStoreData('orders');
+        if (data && Array.isArray(data) && data.length > 0) {
+            _ordersCache = data;
+        } else {
+            _ordersCache = DEFAULT_SEED_ORDERS;
         }
     }
+
+    async function saveOrders(orders) {
+        _ordersCache = orders;
+        await _saveStoreData('orders', orders);
+    }
+
 
     function renderAdminOrdersTable() {
         if (!adminOrdersTbody) return;
@@ -4005,11 +4057,11 @@ function initializeAdminDashboard() {
     }
 
     function updateOrderStatus(orderId, newStatus) {
-        let orders = getStoredOrders();
+        const orders = getStoredOrders();
         const idx = orders.findIndex(o => o.orderId === orderId);
         if (idx !== -1) {
             orders[idx].status = newStatus;
-            localStorage.setItem('pavelia_orders', JSON.stringify(orders));
+            saveOrders(orders); // async: updates cache + MongoDB
             renderAdminOrdersTable();
             const showToastFn = window.showPaveliaToast || alert;
             showToastFn(`✦ Commission ${orderId} updated to: ${newStatus}`);
@@ -6285,18 +6337,27 @@ function initInstagramGallery() {
 /* ==========================================================================
    7. BOOTSTRAP APPLICATION
    ========================================================================== */
-function initApp() {
+async function initApp() {
     runClassicPreloader();
     if (window.PaveliaRouter) {
         window.PaveliaRouter.init();
     }
+
+    // Pre-fetch all store data from MongoDB in parallel so every device
+    // sees the latest admin changes (no localStorage drift)
+    await Promise.all([
+        initCatalogFromServer(),
+        initCollectionsFromServer(),
+        initHeroSlidesFromServer(),
+    ]);
+
     initializePaveliaCommerce();
     initializeNavigation();
     initializeCheckoutFlow();
     initializeAdminDashboard();
     initializeAuth();
     initializeStorySection();
-    initInstagramGallery();
+    initInstagramGallery(); // fetches Instagram posts internally
 }
 
 if (document.readyState === 'loading') {
