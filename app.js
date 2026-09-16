@@ -701,20 +701,30 @@ async function savePaveliaHeroSlides(slides) {
 
 async function initHeroSlidesFromServer() {
     const data = await _fetchStoreData('hero_slides');
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
+        // Server has data — always trust it
         _heroSlidesCache = data;
+    } else if (_heroSlidesCache && _heroSlidesCache.length > 0) {
+        // Server returned null but we already have good data in memory — keep it
+        // Auto-upload to MongoDB so it persists from now on
+        _saveStoreData('hero_slides', _heroSlidesCache).catch(() => {});
     } else {
+        // Nothing in memory — try localStorage then defaults
         const local = localStorage.getItem('pavelia_store_hero_slides');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _heroSlidesCache = parsed;
+                    // Auto-upload localStorage data to MongoDB
+                    _saveStoreData('hero_slides', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _heroSlidesCache = DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
+        // Seed MongoDB with defaults
+        _saveStoreData('hero_slides', _heroSlidesCache).catch(() => {});
     }
 }
 
@@ -959,20 +969,30 @@ async function savePaveliaCatalog(catalog) {
 
 async function initCatalogFromServer() {
     const data = await _fetchStoreData('catalog');
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
+        // Server has data — always trust it
         _catalogCache = data;
+    } else if (_catalogCache && _catalogCache.length > 0) {
+        // Server returned null but we already have good data in memory — keep it
+        // Auto-upload to MongoDB so it persists from now on
+        _saveStoreData('catalog', _catalogCache).catch(() => {});
     } else {
+        // Nothing in memory — try localStorage then defaults
         const local = localStorage.getItem('pavelia_store_catalog');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _catalogCache = parsed;
+                    // Auto-upload localStorage data to MongoDB
+                    _saveStoreData('catalog', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _catalogCache = PAVELIA_PRODUCTS.map(p => ({ ...p }));
+        // Seed MongoDB with defaults
+        _saveStoreData('catalog', _catalogCache).catch(() => {});
     }
 }
 
@@ -1033,20 +1053,30 @@ async function savePaveliaCollections(collections) {
 
 async function initCollectionsFromServer() {
     const data = await _fetchStoreData('collections');
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
+        // Server has data — always trust it
         _collectionsCache = data;
+    } else if (_collectionsCache && _collectionsCache.length > 0) {
+        // Server returned null but we already have good data in memory — keep it
+        // Auto-upload to MongoDB so it persists from now on
+        _saveStoreData('collections', _collectionsCache).catch(() => {});
     } else {
+        // Nothing in memory — try localStorage then defaults
         const local = localStorage.getItem('pavelia_store_collections');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _collectionsCache = parsed;
+                    // Auto-upload localStorage data to MongoDB
+                    _saveStoreData('collections', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _collectionsCache = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
+        // Seed MongoDB with defaults
+        _saveStoreData('collections', _collectionsCache).catch(() => {});
     }
 }
 
@@ -3804,15 +3834,22 @@ function initializeAdminDashboard() {
 
     async function initOrdersFromServer() {
         const data = await _fetchStoreData('orders');
-        if (data && Array.isArray(data)) {
+        if (data && Array.isArray(data) && data.length > 0) {
+            // Server has data — always trust it
             _ordersCache = data;
+        } else if (_ordersCache && _ordersCache.length > 0) {
+            // Server returned null but we already have good data in memory — keep it
+            _saveStoreData('orders', _ordersCache).catch(() => {});
         } else {
+            // Nothing in memory — try localStorage then defaults
             const local = localStorage.getItem('pavelia_store_orders');
             if (local) {
                 try {
                     const parsed = JSON.parse(local);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         _ordersCache = parsed;
+                        // Auto-upload localStorage orders to MongoDB
+                        _saveStoreData('orders', parsed).catch(() => {});
                         return;
                     }
                 } catch (_) {}
