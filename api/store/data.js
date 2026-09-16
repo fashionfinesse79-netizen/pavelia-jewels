@@ -9,9 +9,7 @@ const jwt = require('jsonwebtoken');
 const { connectToDatabase, getFallbackStore, saveFallbackStore } = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pavelia_luxury_jwt_key_est_2026';
-
 const MASTER_ADMIN_KEY = process.env.ADMIN_KEY || 'pavelia_luxury_admin_2026';
-
 const ALLOWED_COLLECTIONS = ['catalog', 'collections', 'hero_slides', 'orders'];
 
 module.exports = async (req, res) => {
@@ -34,19 +32,23 @@ module.exports = async (req, res) => {
                 const col = db.collection('store_data');
                 const record = await col.findOne({ _id: collection });
                 if (record && record.data !== undefined) {
-                    return res.status(200).json({ data: record.data });
+                    return res.status(200).json({ data: record.data, _source: 'mongodb' });
                 }
+                // MongoDB connected but this collection has no data yet
+                return res.status(200).json({ data: null, _source: 'mongodb_empty' });
             } else {
+                // MongoDB failed to connect — use /tmp fallback
+                console.error(`[${collection}] GET: MongoDB unavailable. MONGODB_URI set: ${!!process.env.MONGODB_URI}`);
                 const store = getFallbackStore();
                 if (store[collection] !== undefined) {
-                    return res.status(200).json({ data: store[collection] });
+                    return res.status(200).json({ data: store[collection], _source: 'fallback_tmp' });
                 }
+                return res.status(200).json({ data: null, _source: 'fallback_empty' });
             }
         } catch (err) {
-            console.error(`Store GET error [${collection}]:`, err);
+            console.error(`Store GET error [${collection}]:`, err.message);
+            return res.status(200).json({ data: null, _source: 'error', error: err.message });
         }
-        // Nothing stored yet — client will use its defaults
-        return res.status(200).json({ data: null });
     }
 
     // ── POST — admin write ───────────────────────────────────────────────────
@@ -96,15 +98,21 @@ module.exports = async (req, res) => {
                     { $set: { data, updatedAt: new Date(), updatedBy } },
                     { upsert: true }
                 );
+                return res.status(200).json({ message: `${collection} saved.`, _source: 'mongodb' });
             } else {
+                console.error(`[${collection}] POST: MongoDB unavailable. MONGODB_URI set: ${!!process.env.MONGODB_URI}`);
                 const store = getFallbackStore();
                 store[collection] = data;
                 saveFallbackStore(store);
+                return res.status(200).json({
+                    message: `${collection} saved.`,
+                    _source: 'fallback_tmp',
+                    warning: 'MongoDB unavailable — data in temporary storage only, will be lost on server restart'
+                });
             }
-            return res.status(200).json({ message: `${collection} saved.` });
         } catch (err) {
-            console.error(`Store POST error [${collection}]:`, err);
-            return res.status(500).json({ error: `Failed to save ${collection}.` });
+            console.error(`Store POST error [${collection}]:`, err.message);
+            return res.status(500).json({ error: `Failed to save ${collection}.`, detail: err.message });
         }
     }
 
