@@ -690,7 +690,7 @@ async function _saveStoreData(collection, data) {
 
 // ── Hero Slides ───────────────────────────────────────────────────────────
 function getPaveliaHeroSlides() {
-    if (_heroSlidesCache) return _heroSlidesCache.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (_heroSlidesCache !== null) return _heroSlidesCache.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     return DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
 }
 
@@ -701,10 +701,10 @@ async function savePaveliaHeroSlides(slides) {
 
 async function initHeroSlidesFromServer() {
     const data = await _fetchStoreData('hero_slides');
-    if (data && Array.isArray(data) && data.length > 0) {
-        // Server has data — always trust it
+    if (data !== null && Array.isArray(data)) {
+        // Server has saved data (even if empty) — always trust server
         _heroSlidesCache = data;
-    } else if (_heroSlidesCache && _heroSlidesCache.length > 0) {
+    } else if (_heroSlidesCache !== null && _heroSlidesCache.length > 0) {
         // Server returned null but we already have good data in memory — keep it
         // Auto-upload to MongoDB so it persists from now on
         _saveStoreData('hero_slides', _heroSlidesCache).catch(() => {});
@@ -959,7 +959,7 @@ window.initHeroSlider = initHeroSlider;
    ========================================================================== */
 // ── Product Catalog ───────────────────────────────────────────────────────
 function getPaveliaCatalog() {
-    return _catalogCache || PAVELIA_PRODUCTS;
+    return _catalogCache !== null ? _catalogCache : PAVELIA_PRODUCTS;
 }
 
 async function savePaveliaCatalog(catalog) {
@@ -969,10 +969,10 @@ async function savePaveliaCatalog(catalog) {
 
 async function initCatalogFromServer() {
     const data = await _fetchStoreData('catalog');
-    if (data && Array.isArray(data) && data.length > 0) {
-        // Server has data — always trust it
+    if (data !== null && Array.isArray(data)) {
+        // Server has saved catalog (even if empty) — always trust server
         _catalogCache = data;
-    } else if (_catalogCache && _catalogCache.length > 0) {
+    } else if (_catalogCache !== null && _catalogCache.length > 0) {
         // Server returned null but we already have good data in memory — keep it
         // Auto-upload to MongoDB so it persists from now on
         _saveStoreData('catalog', _catalogCache).catch(() => {});
@@ -1040,7 +1040,7 @@ const DEFAULT_COLLECTIONS = [
 
 // ── Collections ───────────────────────────────────────────────────────────
 function getPaveliaCollections() {
-    if (_collectionsCache) {
+    if (_collectionsCache !== null) {
         return _collectionsCache.filter(c => c && c.id !== 'col-giftvault' && !c.name?.toLowerCase().includes('gift'));
     }
     return DEFAULT_COLLECTIONS;
@@ -1053,10 +1053,10 @@ async function savePaveliaCollections(collections) {
 
 async function initCollectionsFromServer() {
     const data = await _fetchStoreData('collections');
-    if (data && Array.isArray(data) && data.length > 0) {
-        // Server has data — always trust it
+    if (data !== null && Array.isArray(data)) {
+        // Server has saved collections (even if empty) — always trust server
         _collectionsCache = data;
-    } else if (_collectionsCache && _collectionsCache.length > 0) {
+    } else if (_collectionsCache !== null && _collectionsCache.length > 0) {
         // Server returned null but we already have good data in memory — keep it
         // Auto-upload to MongoDB so it persists from now on
         _saveStoreData('collections', _collectionsCache).catch(() => {});
