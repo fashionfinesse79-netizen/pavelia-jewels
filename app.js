@@ -3335,17 +3335,35 @@ function initializeAdminDashboard() {
         if (floatingReturnBtn) {
             floatingReturnBtn.classList.add('hidden');
         }
-        // Re-fetch fresh data from MongoDB every time admin opens
-        await Promise.all([
-            initCatalogFromServer(),
-            initCollectionsFromServer(),
-            initHeroSlidesFromServer(),
-            initOrdersFromServer(),
-        ]);
+
+        // ── INSTANT OPEN: render cached data immediately so admin feels instant ──
         renderAdminProductsTable();
         renderAdminOrdersTable();
         renderAdminCollectionsTable();
         renderAdminHeroSlidesTable();
+
+        // ── BACKGROUND SYNC: fetch fresh data from MongoDB silently ──
+        // Show a subtle syncing indicator in the banner
+        const banner = document.querySelector('.admin-banner-kicker');
+        const origBannerText = banner ? banner.textContent : '';
+        if (banner) banner.textContent = '⟳ SYNCING WITH CLOUD DATABASE...';
+
+        try {
+            await Promise.all([
+                initCatalogFromServer(),
+                initCollectionsFromServer(),
+                initHeroSlidesFromServer(),
+                initOrdersFromServer(),
+            ]);
+            // Re-render with fresh server data
+            renderAdminProductsTable();
+            renderAdminOrdersTable();
+            renderAdminCollectionsTable();
+            renderAdminHeroSlidesTable();
+            if (banner) banner.textContent = '✦ HAUTE JOAILLERIE ATELIER MANAGEMENT';
+        } catch (e) {
+            if (banner) banner.textContent = origBannerText;
+        }
     };
 
     window.closeAdminFullview = (showFloatingReturn = false) => {
