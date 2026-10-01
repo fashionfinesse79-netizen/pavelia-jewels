@@ -421,78 +421,21 @@ const PAVELIA_PRODUCTS = [
 function runClassicPreloader() {
     const overlay = document.getElementById('intro-overlay');
     const appContainer = document.getElementById('app-container');
-    const loaderLine = document.querySelector('.loader-line');
-    const parallaxBg = document.getElementById('parallax-bg');
-    const parallaxContent = document.getElementById('parallax-content');
 
-    window.scrollTo(0, 0);
-
-    if (!overlay) {
-        if (appContainer) {
-            appContainer.classList.remove('hidden');
-            appContainer.classList.add('visible');
-        }
-        document.body.classList.remove('lock-scroll');
-        initDOMParallax();
-        initCarousel();
-        initHeroSlider();
-        return;
+    // Skip intro animation — show site immediately
+    if (overlay) overlay.style.display = 'none';
+    if (appContainer) {
+        appContainer.classList.remove('hidden');
+        appContainer.classList.add('visible');
     }
-
-    document.body.classList.add('lock-scroll');
-
-    let progress = 0;
-    const startTime = Date.now();
-    const minAnimationDuration = 2200;
-
-    const updateLoader = (value) => {
-        progress = value;
-        if (loaderLine) {
-            loaderLine.style.transform = `scaleX(${progress / 100})`;
-        }
-    };
-
-    setTimeout(() => updateLoader(35), 200);
-    setTimeout(() => updateLoader(70), 800);
-    setTimeout(() => updateLoader(100), 1600);
-
-    const completeIntro = () => {
-        updateLoader(100);
-
-        setTimeout(() => {
-            window.scrollTo(0, 0);
-
-            if (appContainer) {
-                appContainer.classList.remove('hidden');
-                void appContainer.offsetHeight;
-                appContainer.classList.add('visible');
-            }
-
-            overlay.classList.add('fade-out');
-
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                document.body.classList.remove('lock-scroll');
-                initDOMParallax();
-                initCarousel();
-                initHeroSlider();
-                if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
-                    window.PaveliaRouter.handleInitialRoute();
-                }
-            }, 1200);
-
-        }, 300);
-    };
-
-    window.addEventListener('load', () => {
-        const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, minAnimationDuration - elapsedTime);
-        setTimeout(completeIntro, remainingTime);
-    });
-
-    setTimeout(() => {
-        if (progress < 100) completeIntro();
-    }, 4500);
+    document.body.classList.remove('lock-scroll');
+    window.scrollTo(0, 0);
+    initDOMParallax();
+    initCarousel();
+    initHeroSlider();
+    if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
+        window.PaveliaRouter.handleInitialRoute();
+    }
 
     function initDOMParallax() {
         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
@@ -1705,7 +1648,7 @@ function initializePaveliaCommerce() {
                         <div class="product-price-row">
                             <span class="product-price">${product.price}</span>
                         </div>
-                        <p class="product-installment">or 3 investments of ₹${installmentPrice} at 0% APR</p>
+
 
                         <div class="product-card-actions">
                             <button class="btn-card-add-bag" data-id="${product.id}">ADD TO BAG</button>
