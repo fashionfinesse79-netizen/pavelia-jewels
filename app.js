@@ -594,10 +594,16 @@ let _collectionsCache = null;
 // ── Generic server fetch helper ───────────────────────────────────────────
 async function _fetchStoreData(collection) {
     try {
-        const res = await fetch(`/api/store/data?collection=${collection}&_t=${Date.now()}`);
+        const res = await fetch(`/api/store/data?collection=${collection}&_t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache'
+            }
+        });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const json = await res.json();
-        return json.data !== undefined ? json.data : null;
+        return (json && json.data !== undefined) ? json.data : null;
     } catch (e) {
         console.warn(`Pavelia: Could not fetch ${collection} from server.`, e);
         return null;
@@ -638,7 +644,9 @@ async function _saveStoreData(collection, data) {
 
 // ── Hero Slides ───────────────────────────────────────────────────────────
 function getPaveliaHeroSlides() {
-    if (_heroSlidesCache !== null) return _heroSlidesCache.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (_heroSlidesCache !== null && _heroSlidesCache.length > 0) {
+        return _heroSlidesCache.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
     return DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
 }
 
@@ -649,30 +657,27 @@ async function savePaveliaHeroSlides(slides) {
 
 async function initHeroSlidesFromServer() {
     const data = await _fetchStoreData('hero_slides');
-    if (data !== null && Array.isArray(data)) {
-        // Server has saved data (even if empty) — always trust server
+    if (data !== null && Array.isArray(data) && data.length > 0) {
+        // Server has saved data — trust server
         _heroSlidesCache = data;
+        try {
+            localStorage.setItem('pavelia_store_hero_slides', JSON.stringify(data));
+        } catch (_) {}
     } else if (_heroSlidesCache !== null && _heroSlidesCache.length > 0) {
-        // Server returned null but we already have good data in memory — keep it
-        // Auto-upload to MongoDB so it persists from now on
-        _saveStoreData('hero_slides', _heroSlidesCache).catch(() => {});
+        // Keep in-memory cache
     } else {
-        // Nothing in memory — try localStorage then defaults
+        // Fallback to localStorage then defaults for display (READ-ONLY)
         const local = localStorage.getItem('pavelia_store_hero_slides');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _heroSlidesCache = parsed;
-                    // Auto-upload localStorage data to MongoDB
-                    _saveStoreData('hero_slides', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _heroSlidesCache = DEFAULT_HERO_SLIDES.map(s => ({ ...s }));
-        // Seed MongoDB with defaults
-        _saveStoreData('hero_slides', _heroSlidesCache).catch(() => {});
     }
 }
 
@@ -907,7 +912,7 @@ window.initHeroSlider = initHeroSlider;
    ========================================================================== */
 // ── Product Catalog ───────────────────────────────────────────────────────
 function getPaveliaCatalog() {
-    return _catalogCache !== null ? _catalogCache : PAVELIA_PRODUCTS;
+    return (_catalogCache !== null && _catalogCache.length > 0) ? _catalogCache : PAVELIA_PRODUCTS;
 }
 
 async function savePaveliaCatalog(catalog) {
@@ -917,30 +922,27 @@ async function savePaveliaCatalog(catalog) {
 
 async function initCatalogFromServer() {
     const data = await _fetchStoreData('catalog');
-    if (data !== null && Array.isArray(data)) {
-        // Server has saved catalog (even if empty) — always trust server
+    if (data !== null && Array.isArray(data) && data.length > 0) {
+        // Server has saved catalog — trust server
         _catalogCache = data;
+        try {
+            localStorage.setItem('pavelia_store_catalog', JSON.stringify(data));
+        } catch (_) {}
     } else if (_catalogCache !== null && _catalogCache.length > 0) {
-        // Server returned null but we already have good data in memory — keep it
-        // Auto-upload to MongoDB so it persists from now on
-        _saveStoreData('catalog', _catalogCache).catch(() => {});
+        // Keep in-memory cache
     } else {
-        // Nothing in memory — try localStorage then defaults
+        // Fallback to localStorage then defaults for display (READ-ONLY)
         const local = localStorage.getItem('pavelia_store_catalog');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _catalogCache = parsed;
-                    // Auto-upload localStorage data to MongoDB
-                    _saveStoreData('catalog', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _catalogCache = PAVELIA_PRODUCTS.map(p => ({ ...p }));
-        // Seed MongoDB with defaults
-        _saveStoreData('catalog', _catalogCache).catch(() => {});
     }
 }
 
@@ -988,7 +990,7 @@ const DEFAULT_COLLECTIONS = [
 
 // ── Collections ───────────────────────────────────────────────────────────
 function getPaveliaCollections() {
-    if (_collectionsCache !== null) {
+    if (_collectionsCache !== null && _collectionsCache.length > 0) {
         return _collectionsCache.filter(c => c && c.id !== 'col-giftvault' && !c.name?.toLowerCase().includes('gift'));
     }
     return DEFAULT_COLLECTIONS;
@@ -1001,30 +1003,27 @@ async function savePaveliaCollections(collections) {
 
 async function initCollectionsFromServer() {
     const data = await _fetchStoreData('collections');
-    if (data !== null && Array.isArray(data)) {
-        // Server has saved collections (even if empty) — always trust server
+    if (data !== null && Array.isArray(data) && data.length > 0) {
+        // Server has saved collections — trust server
         _collectionsCache = data;
+        try {
+            localStorage.setItem('pavelia_store_collections', JSON.stringify(data));
+        } catch (_) {}
     } else if (_collectionsCache !== null && _collectionsCache.length > 0) {
-        // Server returned null but we already have good data in memory — keep it
-        // Auto-upload to MongoDB so it persists from now on
-        _saveStoreData('collections', _collectionsCache).catch(() => {});
+        // Keep in-memory cache
     } else {
-        // Nothing in memory — try localStorage then defaults
+        // Fallback to localStorage then defaults for display (READ-ONLY)
         const local = localStorage.getItem('pavelia_store_collections');
         if (local) {
             try {
                 const parsed = JSON.parse(local);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     _collectionsCache = parsed;
-                    // Auto-upload localStorage data to MongoDB
-                    _saveStoreData('collections', parsed).catch(() => {});
                     return;
                 }
             } catch (_) {}
         }
         _collectionsCache = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
-        // Seed MongoDB with defaults
-        _saveStoreData('collections', _collectionsCache).catch(() => {});
     }
 }
 
@@ -3390,6 +3389,7 @@ function initializeAdminDashboard() {
         renderAdminOrdersTable();
         renderAdminCollectionsTable();
         renderAdminHeroSlidesTable();
+        renderAdminInstagramTable();
 
         // ── BACKGROUND SYNC: fetch fresh data from MongoDB silently ──
         // Show a subtle syncing indicator in the banner
@@ -3398,22 +3398,70 @@ function initializeAdminDashboard() {
         if (banner) banner.textContent = '⟳ SYNCING WITH CLOUD DATABASE...';
 
         try {
-            await Promise.all([
+            await Promise.allSettled([
                 initCatalogFromServer(),
                 initCollectionsFromServer(),
                 initHeroSlidesFromServer(),
                 initOrdersFromServer(),
+                fetchInstagramPostsFromServer()
             ]);
             // Re-render with fresh server data
             renderAdminProductsTable();
             renderAdminOrdersTable();
             renderAdminCollectionsTable();
             renderAdminHeroSlidesTable();
+            renderAdminInstagramTable();
             if (banner) banner.textContent = '✦ HAUTE JOAILLERIE ATELIER MANAGEMENT';
         } catch (e) {
             if (banner) banner.textContent = origBannerText;
         }
     };
+
+    window.refreshAdminTables = function () {
+        if (typeof renderAdminProductsTable === 'function') renderAdminProductsTable();
+        if (typeof renderAdminOrdersTable === 'function') renderAdminOrdersTable();
+        if (typeof renderAdminCollectionsTable === 'function') renderAdminCollectionsTable();
+        if (typeof renderAdminHeroSlidesTable === 'function') renderAdminHeroSlidesTable();
+        if (typeof renderAdminInstagramTable === 'function') renderAdminInstagramTable();
+    };
+
+    const btnAdminSyncCloud = document.getElementById('btn-admin-sync-cloud');
+    if (btnAdminSyncCloud) {
+        btnAdminSyncCloud.addEventListener('click', async () => {
+            btnAdminSyncCloud.disabled = true;
+            btnAdminSyncCloud.style.opacity = '0.6';
+            const icon = btnAdminSyncCloud.querySelector('svg');
+            if (icon) icon.style.animation = 'spin 1s linear infinite';
+
+            const banner = document.querySelector('.admin-banner-kicker');
+            if (banner) banner.textContent = '⟳ SYNCING WITH CLOUD DATABASE...';
+
+            try {
+                await Promise.allSettled([
+                    initCatalogFromServer(),
+                    initCollectionsFromServer(),
+                    initHeroSlidesFromServer(),
+                    initOrdersFromServer(),
+                    fetchInstagramPostsFromServer()
+                ]);
+                if (typeof window.refreshAdminTables === 'function') window.refreshAdminTables();
+                if (typeof window.renderShowroomProducts === 'function') window.renderShowroomProducts();
+                if (typeof window.renderStorefrontCollections === 'function') window.renderStorefrontCollections();
+                if (typeof window.initHeroSlider === 'function') window.initHeroSlider();
+                if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+
+                const showToastFn = window.showPaveliaToast || alert;
+                showToastFn('✦ Cloud database synced across all devices.');
+            } catch (err) {
+                console.error('Manual sync error:', err);
+            } finally {
+                btnAdminSyncCloud.disabled = false;
+                btnAdminSyncCloud.style.opacity = '1';
+                if (icon) icon.style.animation = '';
+                if (banner) banner.textContent = '✦ HAUTE JOAILLERIE ATELIER MANAGEMENT';
+            }
+        });
+    }
 
     window.closeAdminFullview = (showFloatingReturn = false) => {
         if (adminDashboard) {
@@ -3658,8 +3706,11 @@ function initializeAdminDashboard() {
         else closeProductModal();
     });
 
+    let isSavingProduct = false;
     async function handleProductFormSubmit(e) {
         if (e && e.preventDefault) e.preventDefault();
+        if (isSavingProduct) return;
+
         const id = formProductId ? formProductId.value.trim() : '';
         const name = formProductName ? formProductName.value.trim() : '';
         const category = formProductCategory ? formProductCategory.value : 'rings';
@@ -3735,18 +3786,39 @@ function initializeAdminDashboard() {
             catalog.unshift(newProduct);
         }
 
-        closeProductModal();
-        await savePaveliaCatalog(catalog);
-        renderAdminProductsTable();
-
-        // Update storefront showroom and counts
-        if (typeof window.renderShowroomProducts === 'function') {
-            window.renderShowroomProducts();
+        isSavingProduct = true;
+        const saveBtn = document.getElementById('btn-admin-product-save');
+        const origBtnText = saveBtn ? saveBtn.innerHTML : 'SAVE CREATION';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>✦ SAVING TO CLOUD...</span>';
         }
 
-        // Show toast notification
-        const showToastFn = window.showPaveliaToast || alert;
-        showToastFn(`✦ Creation "${name}" has been saved to the Maison catalog.`);
+        try {
+            const success = await savePaveliaCatalog(catalog);
+            if (!success) {
+                alert('⚠️ Cloud Save Error: Could not save creation to the cloud database. Please verify your internet connection and try again.');
+                return;
+            }
+
+            closeProductModal();
+            renderAdminProductsTable();
+
+            // Update storefront showroom and counts
+            if (typeof window.renderShowroomProducts === 'function') {
+                window.renderShowroomProducts();
+            }
+
+            // Show toast notification
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Creation "${name}" successfully saved to cloud catalog.`);
+        } finally {
+            isSavingProduct = false;
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origBtnText;
+            }
+        }
     }
 
     async function handleDeleteProduct(productId) {
@@ -3755,8 +3827,12 @@ function initializeAdminDashboard() {
         if (!product) return;
 
         if (confirm(`Are you sure you wish to retire "${product.name}" (#${product.id.toUpperCase()}) from the live catalog?`)) {
-            catalog = catalog.filter(p => p.id !== productId);
-            await savePaveliaCatalog(catalog);
+            const updatedCatalog = catalog.filter(p => p.id !== productId);
+            const success = await savePaveliaCatalog(updatedCatalog);
+            if (!success) {
+                alert('⚠️ Cloud Delete Error: Could not retire product from the cloud database. Please try again.');
+                return;
+            }
             renderAdminProductsTable();
             if (typeof window.renderShowroomProducts === 'function') {
                 window.renderShowroomProducts();
@@ -3854,21 +3930,21 @@ function initializeAdminDashboard() {
     async function initOrdersFromServer() {
         const data = await _fetchStoreData('orders');
         if (data && Array.isArray(data) && data.length > 0) {
-            // Server has data — always trust it
+            // Server has data — trust it
             _ordersCache = data;
+            try {
+                localStorage.setItem('pavelia_store_orders', JSON.stringify(data));
+            } catch (_) {}
         } else if (_ordersCache && _ordersCache.length > 0) {
-            // Server returned null but we already have good data in memory — keep it
-            _saveStoreData('orders', _ordersCache).catch(() => {});
+            // Keep in-memory cache
         } else {
-            // Nothing in memory — try localStorage then defaults
+            // Fallback to localStorage then defaults for display (READ-ONLY)
             const local = localStorage.getItem('pavelia_store_orders');
             if (local) {
                 try {
                     const parsed = JSON.parse(local);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         _ordersCache = parsed;
-                        // Auto-upload localStorage orders to MongoDB
-                        _saveStoreData('orders', parsed).catch(() => {});
                         return;
                     }
                 } catch (_) {}
@@ -4423,8 +4499,11 @@ function initializeAdminDashboard() {
     }
 
     // Form Submit
+    let isSavingCollection = false;
     async function handleCollectionFormSubmit(e) {
         if (e && e.preventDefault) e.preventDefault();
+        if (isSavingCollection) return;
+
         const id = formCollectionId ? formCollectionId.value : '';
         const name = formCollectionName ? formCollectionName.value.trim().toUpperCase() : '';
         const badge = formCollectionBadge ? formCollectionBadge.value.trim().toUpperCase() : '05 MASTERPIECES';
@@ -4466,16 +4545,37 @@ function initializeAdminDashboard() {
             });
         }
 
-        closeCollectionModal();
-        await savePaveliaCollections(collections);
-        renderAdminCollectionsTable();
-
-        if (typeof window.renderStorefrontCollections === 'function') {
-            window.renderStorefrontCollections();
+        isSavingCollection = true;
+        const saveBtn = document.getElementById('btn-admin-collection-save');
+        const origBtnText = saveBtn ? saveBtn.innerHTML : 'SAVE COLLECTION';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>✦ SAVING TO CLOUD...</span>';
         }
 
-        const showToastFn = window.showPaveliaToast || alert;
-        showToastFn(`✦ Curated Collection "${name}" updated and live on storefront.`);
+        try {
+            const success = await savePaveliaCollections(collections);
+            if (!success) {
+                alert('⚠️ Cloud Save Error: Could not save curated collection to the cloud database. Please try again.');
+                return;
+            }
+
+            closeCollectionModal();
+            renderAdminCollectionsTable();
+
+            if (typeof window.renderStorefrontCollections === 'function') {
+                window.renderStorefrontCollections();
+            }
+
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Curated Collection "${name}" updated and live on storefront.`);
+        } finally {
+            isSavingCollection = false;
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origBtnText;
+            }
+        }
     }
 
     async function handleDeleteCollection(collectionId) {
@@ -4484,8 +4584,12 @@ function initializeAdminDashboard() {
         if (!col) return;
 
         if (confirm(`Are you sure you wish to remove "${col.name}" from the curated showcase cards on the storefront?`)) {
-            collections = collections.filter(c => c.id !== collectionId);
-            await savePaveliaCollections(collections);
+            const updated = collections.filter(c => c.id !== collectionId);
+            const success = await savePaveliaCollections(updated);
+            if (!success) {
+                alert('⚠️ Cloud Delete Error: Could not delete collection from cloud. Please try again.');
+                return;
+            }
             renderAdminCollectionsTable();
             if (typeof window.renderStorefrontCollections === 'function') {
                 window.renderStorefrontCollections();
@@ -4497,7 +4601,11 @@ function initializeAdminDashboard() {
 
     async function handleResetCollections() {
         if (confirm('Reset all curated collection showcase cards back to Pavelia original presets?')) {
-            await savePaveliaCollections(DEFAULT_COLLECTIONS.map(c => ({ ...c })));
+            const success = await savePaveliaCollections(DEFAULT_COLLECTIONS.map(c => ({ ...c })));
+            if (!success) {
+                alert('⚠️ Reset failed: Cloud database could not be updated.');
+                return;
+            }
             renderAdminCollectionsTable();
             if (typeof window.renderStorefrontCollections === 'function') {
                 window.renderStorefrontCollections();
@@ -4674,8 +4782,11 @@ function initializeAdminDashboard() {
         if (heroSlideModal) heroSlideModal.classList.add('hidden');
     }
 
+    let isSavingHeroSlide = false;
     async function handleHeroSlideFormSubmit(e) {
         if (e && e.preventDefault) e.preventDefault();
+        if (isSavingHeroSlide) return;
+
         const slideId = (formHeroSlideId ? formHeroSlideId.value : '').trim();
         const title = (formHeroSlideTitle ? formHeroSlideTitle.value : '').trim();
         const subtitle = (formHeroSlideSubtitle ? formHeroSlideSubtitle.value : '').trim();
@@ -4712,17 +4823,38 @@ function initializeAdminDashboard() {
             slides.push(newSlide);
         }
 
-        closeHeroSlideModal();
-        await savePaveliaHeroSlides(slides);
-        renderAdminHeroSlidesTable();
-
-        // Immediate live sync with homepage slider
-        if (typeof initHeroSlider === 'function') {
-            initHeroSlider();
+        isSavingHeroSlide = true;
+        const saveBtn = document.getElementById('btn-admin-hero-slide-save');
+        const origBtnText = saveBtn ? saveBtn.innerHTML : 'SAVE HERO SLIDE';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>✦ SAVING TO CLOUD...</span>';
         }
 
-        const showToastFn = window.showPaveliaToast || alert;
-        showToastFn(`✦ Hero banner slide "${title}" saved & updated live.`);
+        try {
+            const success = await savePaveliaHeroSlides(slides);
+            if (!success) {
+                alert('⚠️ Cloud Save Error: Could not save hero slide to the cloud database. Please try again.');
+                return;
+            }
+
+            closeHeroSlideModal();
+            renderAdminHeroSlidesTable();
+
+            // Immediate live sync with homepage slider
+            if (typeof initHeroSlider === 'function') {
+                initHeroSlider();
+            }
+
+            const showToastFn = window.showPaveliaToast || alert;
+            showToastFn(`✦ Hero banner slide "${title}" saved & updated live.`);
+        } finally {
+            isSavingHeroSlide = false;
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origBtnText;
+            }
+        }
     }
 
     async function handleDeleteHeroSlide(slideId) {
@@ -4736,9 +4868,13 @@ function initializeAdminDashboard() {
         }
 
         if (confirm(`Remove slide "${slide.title}" from the hero showcase banner?`)) {
-            slides = slides.filter(s => s.id !== slideId);
-            slides.forEach((s, idx) => s.order = idx);
-            await savePaveliaHeroSlides(slides);
+            const updated = slides.filter(s => s.id !== slideId);
+            updated.forEach((s, idx) => s.order = idx);
+            const success = await savePaveliaHeroSlides(updated);
+            if (!success) {
+                alert('⚠️ Cloud Delete Error: Could not remove hero slide from cloud. Please try again.');
+                return;
+            }
             renderAdminHeroSlidesTable();
             if (typeof initHeroSlider === 'function') {
                 initHeroSlider();
@@ -4754,7 +4890,11 @@ function initializeAdminDashboard() {
         if (!slide) return;
 
         slide.active = slide.active === false ? true : false;
-        await savePaveliaHeroSlides(slides);
+        const success = await savePaveliaHeroSlides(slides);
+        if (!success) {
+            alert('⚠️ Cloud Update Error: Could not update slide status in cloud.');
+            return;
+        }
         renderAdminHeroSlidesTable();
         if (typeof initHeroSlider === 'function') {
             initHeroSlider();
@@ -4776,7 +4916,11 @@ function initializeAdminDashboard() {
         slides[targetIndex] = temp;
 
         slides.forEach((s, idx) => s.order = idx);
-        await savePaveliaHeroSlides(slides);
+        const success = await savePaveliaHeroSlides(slides);
+        if (!success) {
+            alert('⚠️ Cloud Reorder Error: Could not update slide order in cloud.');
+            return;
+        }
         renderAdminHeroSlidesTable();
         if (typeof initHeroSlider === 'function') {
             initHeroSlider();
@@ -4785,7 +4929,11 @@ function initializeAdminDashboard() {
 
     async function handleResetHeroSlides() {
         if (confirm('Reset hero slider to Pavelia original luxury jewelry masterworks?')) {
-            await savePaveliaHeroSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s })));
+            const success = await savePaveliaHeroSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s })));
+            if (!success) {
+                alert('⚠️ Reset Error: Could not restore hero slider in cloud database.');
+                return;
+            }
             renderAdminHeroSlidesTable();
             if (typeof initHeroSlider === 'function') {
                 initHeroSlider();
@@ -4796,18 +4944,15 @@ function initializeAdminDashboard() {
     }
 
     // Event Listeners
-    const btnAdminProductSave = document.getElementById('btn-admin-product-save');
     if (btnOpenAddProduct) btnOpenAddProduct.addEventListener('click', openAddProductModal);
     if (productModalCloseBtn) productModalCloseBtn.addEventListener('click', closeProductModal);
     if (productCancelBtn) productCancelBtn.addEventListener('click', closeProductModal);
     if (productForm) productForm.addEventListener('submit', handleProductFormSubmit);
-    if (btnAdminProductSave) btnAdminProductSave.addEventListener('click', handleProductFormSubmit);
 
     if (adminProductSearch) adminProductSearch.addEventListener('input', renderAdminProductsTable);
     if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', renderAdminProductsTable);
 
     // Collections Event Listeners
-    const btnAdminCollectionSave = document.getElementById('btn-admin-collection-save');
     if (btnOpenAddCollection) btnOpenAddCollection.addEventListener('click', openAddCollectionModal);
     if (btnResetCollections) btnResetCollections.addEventListener('click', handleResetCollections);
     if (collectionModalCloseBtn) collectionModalCloseBtn.addEventListener('click', () => {
@@ -4819,7 +4964,6 @@ function initializeAdminDashboard() {
         else closeCollectionModal();
     });
     if (collectionForm) collectionForm.addEventListener('submit', handleCollectionFormSubmit);
-    if (btnAdminCollectionSave) btnAdminCollectionSave.addEventListener('click', handleCollectionFormSubmit);
     if (adminCollectionsSearch) adminCollectionsSearch.addEventListener('input', renderAdminCollectionsTable);
 
     if (collectionModal) {
@@ -4832,7 +4976,6 @@ function initializeAdminDashboard() {
     }
 
     // Hero Slider Event Listeners
-    const btnAdminHeroSlideSave = document.getElementById('btn-admin-hero-slide-save');
     if (btnOpenAddSlide) btnOpenAddSlide.addEventListener('click', openAddHeroSlideModal);
     if (btnResetHeroSlides) btnResetHeroSlides.addEventListener('click', handleResetHeroSlides);
     if (adminHeroSearch) adminHeroSearch.addEventListener('input', renderAdminHeroSlidesTable);
@@ -4845,7 +4988,6 @@ function initializeAdminDashboard() {
         else closeHeroSlideModal();
     });
     if (heroSlideForm) heroSlideForm.addEventListener('submit', handleHeroSlideFormSubmit);
-    if (btnAdminHeroSlideSave) btnAdminHeroSlideSave.addEventListener('click', handleHeroSlideFormSubmit);
 
     if (heroSlideModal) {
         heroSlideModal.addEventListener('click', (e) => {
@@ -5048,10 +5190,14 @@ function initializeAdminDashboard() {
                     (async () => {
                         let posts = getPaveliaInstagramPosts();
                         posts = posts.filter(p => p.id !== postId);
-                        await savePaveliaInstagramPosts(posts);
+                        const success = await savePaveliaInstagramPosts(posts);
+                        if (!success) {
+                            alert('⚠️ Cloud Delete Error: Could not remove Instagram post from cloud. Please try again.');
+                            return;
+                        }
                         renderAdminInstagramTable();
                         if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
-                        if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post removed.');
+                        if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post removed from cloud.');
                     })();
                 }
                 return;
@@ -5065,7 +5211,11 @@ function initializeAdminDashboard() {
                     const targetPost = posts.find(p => p.id === postId);
                     if (targetPost) {
                         targetPost.active = !(targetPost.active !== false);
-                        await savePaveliaInstagramPosts(posts);
+                        const success = await savePaveliaInstagramPosts(posts);
+                        if (!success) {
+                            alert('⚠️ Cloud Update Error: Could not update post status in cloud.');
+                            return;
+                        }
                         renderAdminInstagramTable();
                         if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
                         if (typeof showAuthToast === 'function') showAuthToast(targetPost.active ? '✦ Post is now live in gallery.' : '✦ Post hidden from storefront.');
@@ -5087,10 +5237,10 @@ function initializeAdminDashboard() {
         btnAdminInstagramCancel.addEventListener('click', closeInstagramModal);
     }
 
-    const btnAdminInstagramSave = document.getElementById('btn-admin-instagram-save');
-
+    let isSavingInstagram = false;
     async function saveInstagramPostAction(e) {
         if (e && e.preventDefault) e.preventDefault();
+        if (isSavingInstagram) return;
 
         const postId = (formInstagramId ? formInstagramId.value.trim() : '');
         let caption = (formInstagramCaption ? formInstagramCaption.value.trim() : '');
@@ -5119,7 +5269,6 @@ function initializeAdminDashboard() {
             const idx = posts.findIndex(p => p.id === postId);
             if (idx !== -1) {
                 posts[idx] = { ...posts[idx], caption, link, image, active };
-                if (typeof showAuthToast === 'function') showAuthToast('✦ Instagram post updated.');
             }
         } else {
             const newPost = {
@@ -5131,20 +5280,40 @@ function initializeAdminDashboard() {
                 order: posts.length
             };
             posts.unshift(newPost);
-            if (typeof showAuthToast === 'function') showAuthToast('✦ New Instagram post added to gallery.');
         }
 
-        closeInstagramModal();
-        await savePaveliaInstagramPosts(posts);
-        renderAdminInstagramTable();
-        if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+        isSavingInstagram = true;
+        const saveBtn = document.getElementById('btn-admin-instagram-save');
+        const origBtnText = saveBtn ? saveBtn.innerHTML : 'SAVE INSTAGRAM POST';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>✦ SAVING TO CLOUD...</span>';
+        }
+
+        try {
+            const success = await savePaveliaInstagramPosts(posts);
+            if (!success) {
+                alert('⚠️ Cloud Save Error: Could not save Instagram post to the cloud database. Please try again.');
+                return;
+            }
+
+            closeInstagramModal();
+            renderAdminInstagramTable();
+            if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+            if (typeof showAuthToast === 'function') {
+                showAuthToast(postId ? '✦ Instagram post updated in cloud.' : '✦ New Instagram post added to gallery.');
+            }
+        } finally {
+            isSavingInstagram = false;
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origBtnText;
+            }
+        }
     }
 
     if (adminInstagramForm) {
         adminInstagramForm.addEventListener('submit', saveInstagramPostAction);
-    }
-    if (btnAdminInstagramSave) {
-        btnAdminInstagramSave.addEventListener('click', saveInstagramPostAction);
     }
 
     // Local file upload for Instagram post
@@ -6282,11 +6451,20 @@ let _igPostsCache = null;
 
 async function fetchInstagramPostsFromServer() {
     try {
-        const res = await fetch(`/api/instagram/posts?_t=${Date.now()}`);
+        const res = await fetch(`/api/instagram/posts?_t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache'
+            }
+        });
         if (res.ok) {
             const data = await res.json();
-            if (data && Array.isArray(data.posts)) {
+            if (data && Array.isArray(data.posts) && data.posts.length > 0) {
                 _igPostsCache = data.posts;
+                try {
+                    localStorage.setItem('pavelia_store_instagram_posts', JSON.stringify(data.posts));
+                } catch (_) {}
                 return _igPostsCache;
             }
         }
@@ -6524,4 +6702,45 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
+
+// ── Real-Time Cross-Device Background Sync ────────────────────────────────
+let _lastCloudSyncTime = Date.now();
+async function syncPaveliaStoreFromCloudSilently() {
+    const now = Date.now();
+    // Throttle: avoid redundant hits within 15 seconds
+    if (now - _lastCloudSyncTime < 15000) return;
+    _lastCloudSyncTime = now;
+
+    try {
+        await Promise.allSettled([
+            initCatalogFromServer(),
+            initCollectionsFromServer(),
+            initHeroSlidesFromServer(),
+            fetchInstagramPostsFromServer()
+        ]);
+
+        if (typeof window.renderShowroomProducts === 'function') window.renderShowroomProducts();
+        if (typeof window.renderStorefrontCollections === 'function') window.renderStorefrontCollections();
+        if (typeof window.initHeroSlider === 'function') window.initHeroSlider();
+        if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
+
+        const adminDashboard = document.getElementById('admin-fullview-dashboard');
+        if (adminDashboard && !adminDashboard.classList.contains('hidden')) {
+            if (typeof window.refreshAdminTables === 'function') {
+                window.refreshAdminTables();
+            }
+        }
+    } catch (_) {}
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        syncPaveliaStoreFromCloudSilently();
+    }
+});
+window.addEventListener('focus', () => {
+    syncPaveliaStoreFromCloudSilently();
+});
+setInterval(syncPaveliaStoreFromCloudSilently, 60000);
+
 
