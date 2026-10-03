@@ -35,6 +35,8 @@ app.get('/api/cart/sync', vercelWrapper(syncCartHandler));
 app.post('/api/cart/sync', vercelWrapper(syncCartHandler));
 app.post('/api/payment/create-order', vercelWrapper(createOrderHandler));
 app.post('/api/payment/verify', vercelWrapper(verifyPaymentHandler));
+app.post('/api/create-order', vercelWrapper(createOrderHandler));
+app.post('/api/verify-payment', vercelWrapper(verifyPaymentHandler));
 
 
 
