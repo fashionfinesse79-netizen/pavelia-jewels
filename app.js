@@ -2891,19 +2891,101 @@ function initializeCheckoutFlow() {
         });
     }
 
+    // Loads Razorpay's official checkout script on demand
+    function loadRazorpayScript() {
+        return new Promise((resolve, reject) => {
+            if (window.Razorpay) return resolve();
+            const s = document.createElement('script');
+            s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Could not load Razorpay.'));
+            document.head.appendChild(s);
+        });
+    }
+
+    let isPaymentInProgress = false;
+    const setPayButtonBusy = (busy, label) => {
+        isPaymentInProgress = busy;
+        if (btnTriggerPayment) btnTriggerPayment.disabled = busy;
+        if (btnPayLabel && label) btnPayLabel.textContent = label;
+    };
+    const toastMsg = (msg) => {
+        if (typeof window.showPaveliaToast === 'function') window.showPaveliaToast(msg);
+        else alert(msg);
+    };
+
+    async function startRazorpayPayment() {
+        if (isPaymentInProgress) return;
+        setPayButtonBusy(true, 'PREPARING SECURE PAYMENT...');
+        const resetLabel = () => setPayButtonBusy(false, 'PAY NOW VIA RAZORPAY');
+        try {
+            await loadRazorpayScript();
+
+            const orderResp = await fetch('/api/payment/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: currentCheckoutItems, address: checkoutAddress || {} })
+            });
+            const orderData = await orderResp.json().catch(() => ({}));
+            if (!orderResp.ok) throw new Error(orderData.error || 'Could not start payment.');
+
+            const addr = checkoutAddress || {};
+            const rzp = new window.Razorpay({
+                key: orderData.keyId,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                order_id: orderData.razorpayOrderId,
+                name: 'Pavelia Jewels',
+                description: 'Fine Jewelry Order',
+                prefill: {
+                    name: addr.fullName || '',
+                    email: addr.email || '',
+                    contact: addr.phone || ''
+                },
+                theme: { color: '#B8895B' },
+                modal: {
+                    ondismiss: () => resetLabel()
+                },
+                handler: async (response) => {
+                    setPayButtonBusy(true, 'CONFIRMING YOUR PAYMENT...');
+                    try {
+                        const verifyResp = await fetch('/api/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+                        const verifyData = await verifyResp.json().catch(() => ({}));
+                        if (!verifyResp.ok || !verifyData.order) {
+                            throw new Error(verifyData.error || 'Payment verification failed.');
+                        }
+                        finalizeOrder(verifyData.order.paymentMethod, verifyData.order);
+                    } catch (err) {
+                        alert(`${err.message}\n\nIf money was debited, please WhatsApp us on +91 9770226317 with payment ID ${response.razorpay_payment_id}.`);
+                    } finally {
+                        resetLabel();
+                    }
+                }
+            });
+            rzp.on('payment.failed', (resp) => {
+                const reason = resp && resp.error && resp.error.description;
+                toastMsg(`Payment failed${reason ? ': ' + reason : ''}. Please try again.`);
+                resetLabel();
+            });
+            rzp.open();
+        } catch (err) {
+            toastMsg(err.message || 'Could not start payment. Please try again.');
+            resetLabel();
+        }
+    }
+
     if (btnTriggerPayment) {
         btnTriggerPayment.addEventListener('click', () => {
-            const totals = calculateTotals(currentCheckoutItems);
             if (selectedPaymentMode === 'online') {
-                // Open Demo Razorpay Simulation Gateway
-                if (rzpModal) {
-                    if (rzpModalAmount) rzpModalAmount.textContent = `₹${totals.total.toLocaleString('en-IN')}`;
-                    if (rzpBodyContent) rzpBodyContent.classList.remove('hidden');
-                    if (rzpProcessingState) rzpProcessingState.classList.add('hidden');
-                    rzpModal.classList.remove('hidden');
-                    rzpModal.classList.add('active');
-                    if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('razorpay');
-                }
+                startRazorpayPayment();
             } else {
                 // Cash on Delivery
                 finalizeOrder('Cash / Card on Delivery (Armored Transit Verification)');
@@ -2975,34 +3057,23 @@ function initializeCheckoutFlow() {
         });
     });
 
-    // Confirm Razorpay Demo Payment
-    if (btnRzpPayConfirm) {
-        btnRzpPayConfirm.addEventListener('click', () => {
-            if (rzpBodyContent) rzpBodyContent.classList.add('hidden');
-            if (rzpProcessingState) rzpProcessingState.classList.remove('hidden');
 
-            setTimeout(() => {
-                closeRazorpayModal();
-                finalizeOrder('Online Payment (Encrypted Razorpay Vault - UPI/Card)');
-            }, 1400);
-        });
-    }
 
     // -------------------------------------------------------------
     // FINALIZE ORDER & STEP 3 SUCCESS RECEIPT
     // -------------------------------------------------------------
-    function finalizeOrder(paymentMethodText) {
+    function finalizeOrder(paymentMethodText, serverOrder) {
         const orderYear = new Date().getFullYear();
         const orderRand = Math.floor(10000 + Math.random() * 90000);
-        const orderId = `PVL-${orderYear}-${orderRand}`;
-        const totals = calculateTotals(currentCheckoutItems);
+        const orderId = serverOrder ? serverOrder.orderId : `PVL-${orderYear}-${orderRand}`;
+        const totals = serverOrder ? { total: serverOrder.total } : calculateTotals(currentCheckoutItems);
         const orderDate = new Date().toLocaleDateString('en-IN', {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
         });
 
-        const newOrderRecord = {
+        const newOrderRecord = serverOrder || {
             orderId,
             orderDate,
             timestamp: new Date().toISOString(),
@@ -3013,8 +3084,9 @@ function initializeCheckoutFlow() {
             status: 'Confirmed • In Bespoke Atelier Preparation'
         };
 
-        // Save order to MongoDB via API
-        (async () => {
+        // Online orders are already saved by the server after payment verification.
+        // Only cash-on-delivery orders are saved from the browser.
+        if (!serverOrder) (async () => {
             try {
                 const existingOrders = await _fetchStoreData('orders') || [];
                 existingOrders.unshift(newOrderRecord);

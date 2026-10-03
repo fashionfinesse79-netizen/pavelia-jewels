@@ -13,6 +13,8 @@ const registerHandler = require('./api/auth/register');
 const loginHandler = require('./api/auth/login');
 const profileHandler = require('./api/auth/profile');
 const syncCartHandler = require('./api/cart/sync');
+const createOrderHandler = require('./api/payment/create-order');
+const verifyPaymentHandler = require('./api/payment/verify');
 
 // Vercel execution environment simulator
 const vercelWrapper = (handler) => {
@@ -31,6 +33,8 @@ app.post('/api/auth/login', vercelWrapper(loginHandler));
 app.get('/api/auth/profile', vercelWrapper(profileHandler));
 app.get('/api/cart/sync', vercelWrapper(syncCartHandler));
 app.post('/api/cart/sync', vercelWrapper(syncCartHandler));
+app.post('/api/payment/create-order', vercelWrapper(createOrderHandler));
+app.post('/api/payment/verify', vercelWrapper(verifyPaymentHandler));
 
 
 
