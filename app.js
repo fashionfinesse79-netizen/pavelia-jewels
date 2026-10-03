@@ -430,12 +430,17 @@ function runClassicPreloader() {
     }
     document.body.classList.remove('lock-scroll');
     window.scrollTo(0, 0);
-    initDOMParallax();
-    initCarousel();
-    initHeroSlider();
-    if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
-        window.PaveliaRouter.handleInitialRoute();
-    }
+
+    // Wait until data is loaded and all handlers are registered (see initApp)
+    // before starting sliders and resolving deep links.
+    (window.__paveliaReady || Promise.resolve()).then(() => {
+        initDOMParallax();
+        initCarousel();
+        initHeroSlider();
+        if (window.PaveliaRouter && typeof window.PaveliaRouter.handleInitialRoute === 'function') {
+            window.PaveliaRouter.handleInitialRoute();
+        }
+    });
 
     function initDOMParallax() {
         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
@@ -1615,7 +1620,6 @@ function initializePaveliaCommerce() {
         // 3. Render HTML
         productGridEl.innerHTML = filtered.map(product => {
             const isWishlisted = wishlist.includes(product.id);
-            const installmentPrice = Math.round(product.priceNum / 3).toLocaleString('en-IN');
             const primaryImg = (product.images && product.images[0]) || product.image;
 
             return `
@@ -3050,7 +3054,7 @@ function initializeCheckoutFlow() {
         // Generate dynamic WhatsApp Concierge tracking link
         if (btnWhatsappTrack) {
             const waMsg = `Hello Pavelia Luxury Atelier Concierge,\n\nI have placed a bespoke Haute Joaillerie commission on your boutique.\n\n✦ Order ID: ${orderId}\n✦ Client: ${(checkoutAddress && checkoutAddress.fullName) || 'Patron'}\n✦ Total Investment: ₹${totals.total.toLocaleString('en-IN')}\n✦ Payment Mode: ${paymentMethodText}\n✦ Delivery Destination: ${(checkoutAddress && checkoutAddress.city) || ''}, ${(checkoutAddress && checkoutAddress.state) || ''}\n\nPlease share live master artisan crafting updates & armored tracking.`;
-            btnWhatsappTrack.href = `https://wa.me/919999999999?text=${encodeURIComponent(waMsg)}`;
+            btnWhatsappTrack.href = `https://wa.me/919770226317?text=${encodeURIComponent(waMsg)}`;
         }
 
         // Advance to Step 3
@@ -5587,7 +5591,7 @@ function initializeAuth() {
 
         if (custDossierBtnWa) {
             const waMsg = `Hello Pavelia Luxury Atelier Concierge,\n\nI am inquiring about my Commission Dossier:\n✦ Order ID: ${order.orderId}\n✦ Patron: ${clientName}\n✦ Total Investment: ₹${totalNum.toLocaleString('en-IN')}\n✦ Status: ${order.status || 'In Atelier Preparation'}\n\nPlease share estimated transit schedule.`;
-            custDossierBtnWa.href = `https://wa.me/919999999999?text=${encodeURIComponent(waMsg)}`;
+            custDossierBtnWa.href = `https://wa.me/919770226317?text=${encodeURIComponent(waMsg)}`;
         }
 
         if (push && window.PaveliaRouter) window.PaveliaRouter.pushModalState('cust-dossier', { orderId: order.orderId });
@@ -6414,26 +6418,33 @@ function initInstagramGallery() {
    7. BOOTSTRAP APPLICATION
    ========================================================================== */
 async function initApp() {
+    let resolveReady;
+    window.__paveliaReady = new Promise(resolve => { resolveReady = resolve; });
+
     runClassicPreloader();
     if (window.PaveliaRouter) {
         window.PaveliaRouter.init();
     }
 
-    // Pre-fetch all store data from MongoDB in parallel so every device
-    // sees the latest admin changes (no localStorage drift)
-    await Promise.all([
-        initCatalogFromServer(),
-        initCollectionsFromServer(),
-        initHeroSlidesFromServer(),
-    ]);
+    try {
+        // Pre-fetch all store data from MongoDB in parallel so every device
+        // sees the latest admin changes (no localStorage drift)
+        await Promise.all([
+            initCatalogFromServer(),
+            initCollectionsFromServer(),
+            initHeroSlidesFromServer(),
+        ]);
 
-    initializePaveliaCommerce();
-    initializeNavigation();
-    initializeCheckoutFlow();
-    initializeAdminDashboard();
-    initializeAuth();
-    initializeStorySection();
-    initInstagramGallery(); // fetches Instagram posts internally
+        initializePaveliaCommerce();
+        initializeNavigation();
+        initializeCheckoutFlow();
+        initializeAdminDashboard();
+        initializeAuth();
+        initializeStorySection();
+        initInstagramGallery(); // fetches Instagram posts internally
+    } finally {
+        resolveReady();
+    }
 }
 
 if (document.readyState === 'loading') {
