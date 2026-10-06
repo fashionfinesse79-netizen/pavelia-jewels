@@ -835,12 +835,16 @@ function initHeroSlider() {
         startAutoAdvance();
     }
 
+    // Always expose the CURRENT render's controls so listeners bound once never go stale
+    globalHeroSliderState.api = { goToSlide, startAutoAdvance, stopAutoAdvance, resetAutoAdvance };
+    const sliderApi = () => globalHeroSliderState.api;
+
     if (prevBtn && prevBtn.dataset.bound !== 'true') {
         prevBtn.dataset.bound = 'true';
         prevBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
-            resetAutoAdvance();
+            sliderApi().goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+            sliderApi().resetAutoAdvance();
         });
     }
 
@@ -848,15 +852,16 @@ function initHeroSlider() {
         nextBtn.dataset.bound = 'true';
         nextBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
-            resetAutoAdvance();
+            sliderApi().goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+            sliderApi().resetAutoAdvance();
         });
     }
 
     if (heroSection && heroSection.dataset.hoverBound !== 'true') {
         heroSection.dataset.hoverBound = 'true';
-        heroSection.addEventListener('mouseenter', stopAutoAdvance);
-        heroSection.addEventListener('mouseleave', startAutoAdvance);
+        // Pause on hover for mouse only (touch taps fire mouseenter without mouseleave)
+        heroSection.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') sliderApi().stopAutoAdvance(); });
+        heroSection.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') sliderApi().startAutoAdvance(); });
 
         let touchStartX = 0;
         let touchStartY = 0;
@@ -873,11 +878,11 @@ function initHeroSlider() {
                 const diffY = e.changedTouches[0].clientY - touchStartY;
                 if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
                     if (diffX < 0) {
-                        goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+                        sliderApi().goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
                     } else {
-                        goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+                        sliderApi().goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
                     }
-                    resetAutoAdvance();
+                    sliderApi().resetAutoAdvance();
                 }
             }
         }, { passive: true });
@@ -892,11 +897,11 @@ function initHeroSlider() {
 
             if (window.scrollY < window.innerHeight * 0.7) {
                 if (e.key === 'ArrowLeft') {
-                    goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
-                    resetAutoAdvance();
+                    sliderApi().goToSlide(globalHeroSliderState.currentIndex - 1, 'prev');
+                    sliderApi().resetAutoAdvance();
                 } else if (e.key === 'ArrowRight') {
-                    goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
-                    resetAutoAdvance();
+                    sliderApi().goToSlide(globalHeroSliderState.currentIndex + 1, 'next');
+                    sliderApi().resetAutoAdvance();
                 }
             }
         });
@@ -6712,6 +6717,7 @@ async function syncPaveliaStoreFromCloudSilently() {
     _lastCloudSyncTime = now;
 
     try {
+        const _heroBefore = JSON.stringify(getPaveliaHeroSlides());
         await Promise.allSettled([
             initCatalogFromServer(),
             initCollectionsFromServer(),
@@ -6721,7 +6727,8 @@ async function syncPaveliaStoreFromCloudSilently() {
 
         if (typeof window.renderShowroomProducts === 'function') window.renderShowroomProducts();
         if (typeof window.renderStorefrontCollections === 'function') window.renderStorefrontCollections();
-        if (typeof window.initHeroSlider === 'function') window.initHeroSlider();
+        // Only rebuild the hero slider if its slides changed, so autoplay isn't interrupted
+        if (JSON.stringify(getPaveliaHeroSlides()) !== _heroBefore && typeof window.initHeroSlider === 'function') window.initHeroSlider();
         if (typeof window.initInstagramGallery === 'function') window.initInstagramGallery();
 
         const adminDashboard = document.getElementById('admin-fullview-dashboard');
