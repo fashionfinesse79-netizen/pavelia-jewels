@@ -2245,7 +2245,7 @@ function initializePaveliaCommerce() {
 
                     <div class="quickview-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button class="btn-qv-add-cart" id="btn-qv-add-bag" style="flex: 1; min-width: 180px;">ADD TO ATELIER BAG &rarr;</button>
-                        <button class="btn-qv-buynow" id="btn-qv-buynow" style="flex: 1; min-width: 180px; background: var(--color-desert-sand, #BD946C); color: var(--color-desert-cream, #FAF5EE); border: 1px solid var(--color-desert-sand-deep, #A77B51); font-family: var(--font-heading); font-size: 0.72rem; letter-spacing: 0.14em; font-weight: 700; padding: 14px 20px; border-radius: 2px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(189, 148, 108, 0.3);">BUY NOW &rarr;</button>
+                        <button class="btn-qv-buynow" id="btn-qv-buynow" style="flex: 1; min-width: 180px; background: var(--color-desert-sand, #C2AE8A); color: var(--color-desert-cream, #F8F6F2); border: 1px solid var(--color-desert-sand-deep, #9C8B6E); font-family: var(--font-heading); font-size: 0.72rem; letter-spacing: 0.14em; font-weight: 700; padding: 14px 20px; border-radius: 2px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(194, 174, 138, 0.3);">BUY NOW &rarr;</button>
                     </div>
                 </div>
             </div>
@@ -2652,13 +2652,13 @@ function initializeCheckoutFlow() {
             const variantSpecs = [item.variantMetal, item.variantSize && item.variantSize !== 'Standard' ? `Size ${item.variantSize}` : ''].filter(Boolean).join(' • ');
 
             return `
-                <div class="checkout-item-row" style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(197,168,128,0.12);">
-                    <div style="width: 54px; height: 54px; border-radius: 2px; overflow: hidden; background: #1C100A; border: 1px solid rgba(189,148,108,0.25); flex-shrink: 0;">
+                <div class="checkout-item-row" style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(216, 197, 163,0.12);">
+                    <div style="width: 54px; height: 54px; border-radius: 2px; overflow: hidden; background: #1C100A; border: 1px solid rgba(194, 174, 138,0.25); flex-shrink: 0;">
                         <img src="${itemImg}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-family: var(--font-heading); font-size: 0.82rem; color: #FFFFFF; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
-                        ${variantSpecs ? `<div style="font-size: 0.68rem; color: #C5A880; margin-top: 2px;">${variantSpecs}</div>` : ''}
+                        ${variantSpecs ? `<div style="font-size: 0.68rem; color: #D8C5A3; margin-top: 2px;">${variantSpecs}</div>` : ''}
                         <div style="font-size: 0.68rem; color: #8E8E8E; margin-top: 2px;">Qty: ${qty}</div>
                     </div>
                     <div style="font-family: var(--font-heading); font-size: 0.85rem; color: #E8D7B8; font-weight: 600; text-align: right; flex-shrink: 0;">
@@ -2835,10 +2835,10 @@ function initializeCheckoutFlow() {
             // Populate Step 2 Delivery Recap
             if (deliveryAddressRecap) {
                 deliveryAddressRecap.innerHTML = `
-                    <div style="background: rgba(197,168,128,0.06); border: 1px solid rgba(197,168,128,0.2); padding: 14px 16px; border-radius: 3px; font-size: 0.76rem; color: #E0D5C1; line-height: 1.6;">
+                    <div style="background: rgba(216, 197, 163,0.06); border: 1px solid rgba(216, 197, 163,0.2); padding: 14px 16px; border-radius: 3px; font-size: 0.76rem; color: #E0D5C1; line-height: 1.6;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <strong style="color: var(--color-gold); font-family: var(--font-heading); letter-spacing: 0.08em;">✦ ARMORED TRANSIT DESTINATION:</strong>
-                            <span style="font-size: 0.68rem; background: #26160F; border: 1px solid var(--color-desert-sand, #BD946C); color: var(--color-desert-sand, #BD946C); padding: 2px 8px; border-radius: 2px;">${addressType.toUpperCase()}</span>
+                            <span style="font-size: 0.68rem; background: #252525; border: 1px solid var(--color-desert-sand, #C2AE8A); color: var(--color-desert-sand, #C2AE8A); padding: 2px 8px; border-radius: 2px;">${addressType.toUpperCase()}</span>
                         </div>
                         <div style="font-weight: 600; color: #FFFFFF; font-size: 0.82rem;">${fullName} • +91 ${phoneDigits}</div>
                         <div style="color: #BFB4A0; margin-top: 2px;">${street}${landmark ? ', ' + landmark : ''}, ${city}, ${state} - ${pinClean}</div>
@@ -4195,8 +4195,8 @@ function initializeAdminDashboard() {
                 <div style="font-size: 0.95rem; font-weight: 600; color: #FFFFFF; margin-bottom: 4px;">📍 ${street || 'Street address on file'}</div>
                 ${landmark ? `<div style="font-size: 0.82rem; color: #DFCA9B; margin-bottom: 4px;">✦ Landmark / Colony: <strong>${landmark}</strong></div>` : ''}
                 <div style="font-size: 0.88rem; color: #E0D5C1; margin-bottom: 4px;">${[city, state].filter(Boolean).join(', ')} - <strong style="color: var(--color-gold); font-size: 0.95rem;">${pincode}</strong></div>
-                <div style="font-size: 0.76rem; color: #9A9A9A; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(197,168,128,0.2);">
-                    Recipient: <strong style="color: #FFFFFF;">${clientName}</strong> • Phone: <strong style="color: #FFFFFF;">+91 ${clientPhone}</strong> • Type: <span style="background: rgba(197,168,128,0.15); color: var(--color-gold-light); padding: 1px 6px; border-radius: 2px;">${locationType.toUpperCase()}</span>
+                <div style="font-size: 0.76rem; color: #9A9A9A; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(216, 197, 163,0.2);">
+                    Recipient: <strong style="color: #FFFFFF;">${clientName}</strong> • Phone: <strong style="color: #FFFFFF;">+91 ${clientPhone}</strong> • Type: <span style="background: rgba(216, 197, 163,0.15); color: var(--color-gold-light); padding: 1px 6px; border-radius: 2px;">${locationType.toUpperCase()}</span>
                 </div>
             `;
         }
@@ -5931,7 +5931,7 @@ function initializeAuth() {
                 });
             } else if (cartItems.length > 0 || wishlistItems.length > 0) {
                 dashboardOrdersList.innerHTML = `
-                    <div style="font-size:0.75rem; color:#E0D5C1; line-height:1.6; background:#1E1E1E; padding:12px 14px; border-radius:3px; border:1px solid rgba(197,168,128,0.2);">
+                    <div style="font-size:0.75rem; color:#E0D5C1; line-height:1.6; background:#1E1E1E; padding:12px 14px; border-radius:3px; border:1px solid rgba(216, 197, 163,0.2);">
                         <p style="margin-bottom:4px;"><strong style="color:var(--color-gold);">&#10022; Private Vault Status:</strong></p>
                         <p>&bull; Bag: <strong>${cartItems.length} fine creation${cartItems.length === 1 ? '' : 's'}</strong></p>
                         <p>&bull; Wishlist: <strong>${wishlistItems.length} curated piece${wishlistItems.length === 1 ? '' : 's'}</strong></p>
