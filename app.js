@@ -1625,7 +1625,9 @@ function initializePaveliaCommerce() {
         productGridEl.innerHTML = filtered.map(product => {
             const isWishlisted = wishlist.includes(product.id);
             const primaryImg = (product.images && product.images[0]) || product.image;
-            const secondaryImg = (Array.isArray(product.images) && product.images[1]) || '';
+            const cardImages = (Array.isArray(product.images) ? product.images.filter(Boolean) : []);
+            if (cardImages.length === 0 && product.image) cardImages.push(product.image);
+            const multiImg = cardImages.length > 1;
 
             return `
                 <div class="product-card" data-product-id="${product.id}">
@@ -1646,8 +1648,11 @@ function initializePaveliaCommerce() {
                     </div>
 
                     <div class="product-img-wrapper" data-id="${product.id}">
-                        <img src="${primaryImg}" alt="${product.name}" class="product-img product-img-primary" loading="lazy">
-                        ${secondaryImg ? `<img src="${secondaryImg}" alt="${product.name} - alternate view" class="product-img product-img-secondary" loading="lazy">` : ''}
+                        ${cardImages.map((src, i) => `<img src="${src}" alt="${product.name}${i ? ' - view ' + (i + 1) : ''}" class="product-img card-slide${i === 0 ? ' active' : ''}" loading="${i === 0 ? 'lazy' : 'eager'}">`).join('')}
+                        ${multiImg ? `
+                        <button type="button" class="card-img-arrow card-img-prev" aria-label="Previous image">&#10094;</button>
+                        <button type="button" class="card-img-arrow card-img-next" aria-label="Next image">&#10095;</button>
+                        <div class="card-img-dots">${cardImages.map((_, i) => `<span class="card-img-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>` : ''}
                     </div>
 
                     <div class="product-info">
@@ -1673,6 +1678,24 @@ function initializePaveliaCommerce() {
     }
 
     function bindProductCardEvents() {
+        // Card image carousel arrows
+        document.querySelectorAll('.product-img-wrapper .card-img-arrow').forEach(arrow => {
+            arrow.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const wrapper = arrow.closest('.product-img-wrapper');
+                const slides = wrapper.querySelectorAll('.card-slide');
+                const dots = wrapper.querySelectorAll('.card-img-dot');
+                let idx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+                const dir = arrow.classList.contains('card-img-next') ? 1 : -1;
+                slides[idx].classList.remove('active');
+                if (dots[idx]) dots[idx].classList.remove('active');
+                idx = (idx + dir + slides.length) % slides.length;
+                slides[idx].classList.add('active');
+                if (dots[idx]) dots[idx].classList.add('active');
+            });
+        });
+
         // Quick View triggers (Top right icon & image click)
         document.querySelectorAll('.btn-quickview-trigger, .product-img-wrapper').forEach(btn => {
             btn.addEventListener('click', (e) => {
