@@ -1625,6 +1625,7 @@ function initializePaveliaCommerce() {
         productGridEl.innerHTML = filtered.map(product => {
             const isWishlisted = wishlist.includes(product.id);
             const primaryImg = (product.images && product.images[0]) || product.image;
+            const secondaryImg = (Array.isArray(product.images) && product.images[1]) || '';
 
             return `
                 <div class="product-card" data-product-id="${product.id}">
@@ -1645,7 +1646,8 @@ function initializePaveliaCommerce() {
                     </div>
 
                     <div class="product-img-wrapper" data-id="${product.id}">
-                        <img src="${primaryImg}" alt="${product.name}" class="product-img" loading="lazy">
+                        <img src="${primaryImg}" alt="${product.name}" class="product-img product-img-primary" loading="lazy">
+                        ${secondaryImg ? `<img src="${secondaryImg}" alt="${product.name} - alternate view" class="product-img product-img-secondary" loading="lazy">` : ''}
                     </div>
 
                     <div class="product-info">

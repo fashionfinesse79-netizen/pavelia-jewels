@@ -1734,6 +1734,28 @@ img {
     transform: scale(1.06);
 }
 
+.product-img-secondary {
+    opacity: 0;
+    transition: opacity 0.45s ease, transform var(--transition-slow);
+}
+
+.product-img-primary {
+    transition: opacity 0.45s ease, transform var(--transition-slow);
+}
+
+@media (hover: hover) {
+    .product-card:hover .product-img-secondary {
+        opacity: 1;
+    }
+    .product-img-wrapper:has(.product-img-secondary):hover .product-img-primary {
+        opacity: 0;
+    }
+}
+
+.product-img-wrapper:has(.product-img-secondary):active .product-img-secondary {
+    opacity: 1;
+}
+
 .product-info {
     padding: 16px 14px;
     display: flex;
