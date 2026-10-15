@@ -2235,8 +2235,12 @@ function initializePaveliaCommerce() {
 
         quickviewContent.innerHTML = `
             <div class="quickview-grid">
-                <div class="quickview-img-side">
-                    <img src="${primaryImg}" alt="${product.name}" id="qv-main-img">
+                <div class="quickview-img-side" id="qv-gallery">
+                    ${imagesList.map((src, i) => `<img src="${src}" alt="${product.name}" class="qv-slide${i === 0 ? ' active' : ''}"${i === 0 ? ' id="qv-main-img"' : ''}>`).join('')}
+                    ${imagesList.length > 1 ? `
+                    <button type="button" class="card-img-arrow card-img-prev" aria-label="Previous image">&#10094;</button>
+                    <button type="button" class="card-img-arrow card-img-next" aria-label="Next image">&#10095;</button>
+                    <div class="card-img-dots">${imagesList.map((_, i) => `<span class="card-img-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>` : ''}
                 </div>
                 <div class="quickview-info-side">
                     <div>
@@ -2291,6 +2295,27 @@ function initializePaveliaCommerce() {
 
         bindToggles('qv-metal-options');
         bindToggles('qv-size-options');
+
+        const qvGallery = document.getElementById('qv-gallery');
+        if (qvGallery) {
+            const slides = qvGallery.querySelectorAll('.qv-slide');
+            const dots = qvGallery.querySelectorAll('.card-img-dot');
+            let qvIdx = 0;
+            const showSlide = (n) => {
+                slides[qvIdx].classList.remove('active');
+                if (dots[qvIdx]) dots[qvIdx].classList.remove('active');
+                qvIdx = (n + slides.length) % slides.length;
+                slides[qvIdx].classList.add('active');
+                if (dots[qvIdx]) dots[qvIdx].classList.add('active');
+            };
+            qvGallery.querySelectorAll('.card-img-arrow').forEach(arrow => {
+                arrow.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showSlide(qvIdx + (arrow.classList.contains('card-img-next') ? 1 : -1));
+                });
+            });
+        }
 
         const qvAddBagBtn = document.getElementById('btn-qv-add-bag');
         if (qvAddBagBtn) {
@@ -3718,6 +3743,10 @@ function initializeAdminDashboard() {
             : [product.image].filter(Boolean);
         if (formProductImage) formProductImage.value = imagesList[0] || product.image || '';
         if (formProductImage2) formProductImage2.value = imagesList[1] || '';
+        [3, 4, 5].forEach(n => {
+            const el = document.getElementById('form-product-image' + n);
+            if (el) el.value = imagesList[n - 1] || '';
+        });
 
         productModal.classList.remove('hidden');
         if (window.PaveliaRouter) window.PaveliaRouter.pushModalState('admin-product');
@@ -3752,8 +3781,12 @@ function initializeAdminDashboard() {
         const specs = formProductSpecs ? formProductSpecs.value.trim() : '';
         const image = formProductImage ? formProductImage.value.trim() : '';
         const image2 = formProductImage2 ? formProductImage2.value.trim() : '';
+        const extraImages = [3, 4, 5].map(n => {
+            const el = document.getElementById('form-product-image' + n);
+            return el ? el.value.trim() : '';
+        });
 
-        const images = [image, image2].filter(Boolean);
+        const images = [image, image2, ...extraImages].filter(Boolean).slice(0, 5);
 
         if (!name || !image || isNaN(priceNum) || priceNum <= 0) {
             alert('Please provide a valid creation title, primary image URL, and price.');
@@ -5375,19 +5408,26 @@ function initializeAdminDashboard() {
         });
     }
 
-    // Product Secondary Image Cloudinary Upload
-    const productSecondaryTrigger = document.getElementById('product-secondary-upload-trigger');
-    const formProductSecondaryFile = document.getElementById('form-product-secondary-file');
-    if (productSecondaryTrigger && formProductSecondaryFile) {
-        productSecondaryTrigger.addEventListener('click', () => formProductSecondaryFile.click());
-        formProductSecondaryFile.addEventListener('change', async (e) => {
+    // Product Image 2-5 Cloudinary Uploads
+    [
+        ['product-secondary-upload-trigger', 'form-product-secondary-file', 'form-product-image2'],
+        ['product-image3-upload-trigger', 'form-product-image3-file', 'form-product-image3'],
+        ['product-image4-upload-trigger', 'form-product-image4-file', 'form-product-image4'],
+        ['product-image5-upload-trigger', 'form-product-image5-file', 'form-product-image5']
+    ].forEach(([triggerId, fileId, inputId]) => {
+        const trigger = document.getElementById(triggerId);
+        const fileInput = document.getElementById(fileId);
+        const urlInput = document.getElementById(inputId);
+        if (!trigger || !fileInput || !urlInput) return;
+        trigger.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             try {
-                await PaveliaCloud.uploadImage(file, productSecondaryTrigger, null, formProductImage2);
+                await PaveliaCloud.uploadImage(file, trigger, null, urlInput);
             } catch (err) {}
         });
-    }
+    });
 
     // Collection Image Cloudinary Upload
     const collectionUploadTrigger = document.getElementById('collection-upload-trigger');

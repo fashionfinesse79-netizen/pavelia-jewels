@@ -3853,6 +3853,22 @@ img {
     object-fit: cover;
 }
 
+.quickview-img-side img.qv-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.quickview-img-side img.qv-slide.active {
+    opacity: 1;
+}
+
+.quickview-img-side .card-img-arrow {
+    opacity: 1;
+}
+
 .quickview-info-side {
     display: flex;
     flex-direction: column;
