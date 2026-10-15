@@ -229,14 +229,14 @@ img {
  * 4. TOP MAISON TICKER ANNOUNCEMENT
  * ------------------------------------------------------------- */
 .top-announcement-bar {
-    background: linear-gradient(90deg, #C2AE8A 0%, #D8C5A3 50%, #C2AE8A 100%);
-    color: var(--color-desert-dune-dark, #252525);
+    background: #82807E;
+    color: #000000;
     font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     padding: 9px 0;
-    border-bottom: 1px solid rgba(167, 123, 81, 0.4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
     overflow: hidden;
     white-space: nowrap;
     position: relative;
@@ -253,8 +253,8 @@ img {
 }
 
 .ticker-divider {
-    color: var(--color-desert-cream, #F8F6F2);
-    opacity: 0.9;
+    color: #000000;
+    opacity: 0.7;
 }
 
 @keyframes marqueeScroll {
@@ -2778,12 +2778,12 @@ img {
 }
 
 .bespoke-card {
-    background: linear-gradient(135deg, #C2AE8A 0%, #9C8B6E 100%);
-    border: 1px solid var(--color-desert-sand-deep, #9C8B6E);
+    background: #EAE6DF;
+    border: 1px solid #D8C5A3;
     border-radius: 6px;
     padding: 60px 8%;
     text-align: center;
-    box-shadow: 0 25px 70px rgba(37, 37, 37, 0.22);
+    box-shadow: 0 25px 70px rgba(37, 37, 37, 0.08);
     position: relative;
     overflow: hidden;
 }
@@ -2792,7 +2792,7 @@ img {
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.35em;
-    color: #F8F6F2;
+    color: #8A7A5E;
     margin-bottom: 14px;
     display: inline-block;
 }
@@ -2802,7 +2802,7 @@ img {
     font-size: clamp(2rem, 4.5vw, 3.2rem);
     font-weight: 400;
     letter-spacing: 0.14em;
-    color: #FFFFFF;
+    color: #252525;
     margin-bottom: 16px;
     line-height: 1.2;
 }
@@ -2810,7 +2810,7 @@ img {
 .bespoke-desc {
     font-family: var(--font-serif);
     font-size: 1.15rem;
-    color: rgba(255, 255, 255, 0.92);
+    color: #4A4A4A;
     max-width: 700px;
     margin: 0 auto 36px auto;
     line-height: 1.6;
