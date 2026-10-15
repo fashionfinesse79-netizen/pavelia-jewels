@@ -229,7 +229,7 @@ img {
  * 4. TOP MAISON TICKER ANNOUNCEMENT
  * ------------------------------------------------------------- */
 .top-announcement-bar {
-    background: #82807E;
+    background: linear-gradient(90deg, #D4D4D6 0%, #E6E6E8 50%, #D4D4D6 100%);
     color: #000000;
     font-size: 0.65rem;
     font-weight: 600;
